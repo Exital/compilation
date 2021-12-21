@@ -1,14 +1,13 @@
 %{
 #include "hw3_output.hpp"
+#define YYSTYPE Node*
 #include "tokenTypes.hpp"
 #include "parser.tab.hpp"
-#define YYSTYPE Node*
 %}
 
-%option nounput
 %option yylineno
 %option noyywrap
-
+%option nounput
 
 whitespace	[ \t\n\r]
 
