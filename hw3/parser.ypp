@@ -1,0 +1,447 @@
+%{
+#include "hw3_output.hpp"
+#include "SymbolsTablesManager.hpp"
+#include "tokenTypes.hpp"
+#include <iostream>
+#include <typeinfo>
+
+#define YYSTYPE Node*
+using namespace output;
+
+int yyerror(const char * message);
+extern int yylineno;
+extern int yylex();
+extern char* yytext;
+
+SymbolsTableManager stm;
+int in_loop = 0;
+
+bool does_types_match(string type1, string type2){
+    //return true if the exps of type2 can be assign to type1
+    return (type1 == type2) || (type1 == "INT" && type2 == "BYTE");
+}
+
+bool is_numeric(string type){
+    return (type == "INT") || (type == "BYTE");
+}
+
+bool are_numeric(string type1, string type2){
+    return is_numeric(type1) && is_numeric(type2);
+}
+
+bool check_const(string TypeAnnotation){
+    return (TypeAnnotation == "CONST");
+}
+
+%}
+
+
+%token VOID
+%token INT
+%token BYTE
+%token B
+%token BOOL
+%token CONST
+%token TRUE
+%token FALSE
+%token RETURN
+%nonassoc IF
+%nonassoc ELSE
+%token WHILE
+%token BREAK
+%token CONTINUE
+%token SC
+%token COMMA
+%token NUM
+%token STRING
+%token ID
+%right ASSIGN
+%left OR
+%left AND
+%left EQUALITY
+%nonassoc RELOP
+%left ADDSUB
+%left MULDIV
+%right NOT
+%left RPAREN
+%left LPAREN
+%token LBRACE
+%token RBRACE
+
+%%
+Program : Funcs                                                            {};
+Funcs :                                                                    {};
+Funcs : FuncDecl Funcs                                                     {};
+
+//TODO: add const vector
+FuncDecl : RetType ID LPAREN Formals RPAREN {
+    string func_name = ((Singelton*)$2)->val;
+    string ret_type = ((Singelton*)$1)->val;
+    delete($1); delete($2);
+    vector<string> arg_types;
+    vector<string> arg_names;
+    vector<bool> arg_consts;
+    FormalDecl* fd = (FormalDecl*)$4;
+    while(fd)
+    {
+        arg_types.push_back(fd->type);
+        arg_names.push_back(fd->id);
+        arg_consts.push_back(fd->is_const);
+        FormalDecl* to_delete = fd;
+        fd = (FormalDecl*)fd->next;
+        delete(to_delete);
+    }
+    if(!(stm.add_function(func_name, ret_type, arg_types))){
+        errorDef(yylineno, func_name);
+        exit(1);
+    }
+    stm.new_scope();
+    string add_args_res = stm.add_function_args_symbols(arg_names, arg_types, arg_consts);
+    if(add_args_res != ""){
+        errorDef(yylineno, add_args_res);
+        exit(1);
+    }
+}
+           LBRACE Statements RBRACE {stm.delete_scope();};
+
+RetType : Type {$$ = $1;};
+   | VOID {$$ = new Singelton("VOID");};
+
+Formals : {$$ = NULL;}
+     | FormalsList {$$ = $1;};
+
+FormalsList : FormalDecl { $$ = $1;};
+           |FormalDecl COMMA FormalsList {$$ = $1; $$->next = $3;};
+
+// TODO: check if its ok
+FormalDecl : TypeAnnotation Type ID {
+   string name = ((Singelton*)$3)->val;
+   string type = ((Singelton*)$2)->val;
+   string constvar = ((Singelton*)$1)->val;
+   bool constflag = check_const(constvar);
+   $$ = new FormalDecl(type, name, constflag);
+   delete($1);
+   delete($2); delete($3); };
+
+Statements : Statement  {$$ = $1;}
+           |Statements Statement   {};
+
+Statement : LBRACE NewScope Statements RBRACE DeleteScope;
+
+// TODO: take care of const type
+Statement : TypeAnnotation Type ID SC {
+    string name = ((Singelton*)$3)->val;
+    string type = ((Singelton*)$2)->val;
+    string constvar = ((Singelton*)$1)->val;
+    delete($1);
+    delete($2); delete($3);
+    bool constflag = check_const(constvar);
+    if(constflag){
+      errorConstDef(yylineno);
+      exit(1);
+    }
+    if(!stm.add_symbol(name, type, constflag)){
+        errorDef(yylineno, name);
+        exit(1);
+    }
+    //$$ = new Statement(type, name);
+ };
+
+// TODO: check what is the appropriate behaviour of const
+Statement : TypeAnnotation Type ID ASSIGN Exp SC {
+   string name = ((Singelton*)$3)->val;
+   string type = ((Singelton*)$2)->val;
+   string constvar = ((Singelton*)$1)->val;
+   string exp_type = ((Exp*)$5)->type;
+   delete($1);
+   delete($2); delete($3); delete($5);
+   bool constflag = check_const(constvar);
+   if(does_types_match(type, exp_type)) {
+       if(!stm.add_symbol(name, type, constflag)){
+           errorDef(yylineno, name);
+           exit(1);
+       }
+       //$$ = new Statement(type, name);
+   } else {
+       errorMismatch(yylineno);
+       exit(1);
+   }};
+
+// TODO: check that the ID from symbol is NOT const if it is errorConstMismatch
+Statement : ID ASSIGN Exp SC    {
+   string id = ((Singelton*)$1)->val;
+   string type = stm.get_type_by_id(id);
+   bool constID = stm.get_const_by_id(id);
+   string exp_type = ((Exp*)$3)->type;
+   delete($1); delete($3);
+   if(type == "UNDEFINED" || stm.get_function_by_id(id)){
+       errorUndef(yylineno, id);
+       exit(1);
+   }
+   if(!does_types_match(type, exp_type)){
+       errorMismatch(yylineno);
+       exit(1);
+   }
+   if(constID){
+      errorConstMismatch(yylineno);
+      exit(1);
+   }
+};
+
+
+Statement : Call SC {$$ = $1;};
+
+Statement : RETURN SC   {
+    if(stm.ret_type_last_func != "VOID"){
+        errorMismatch(yylineno);
+        exit(1);
+    }
+};
+
+Statement : RETURN Exp SC   {
+    string exp_type = ((Exp*)$2)->type;
+    delete($2);
+    if(exp_type == "VOID" || !does_types_match(stm.ret_type_last_func, exp_type)){
+        errorMismatch(yylineno);
+        exit(1);
+    }
+};
+
+Statement : IF CheckBoolScope NewScope Statement DeleteScope %prec IF   { } ;
+Statement : IF CheckBoolScope NewScope Statement DeleteScope ELSE NewScope Statement DeleteScope { };
+Statement : WHILE {in_loop++;} CheckBoolScope NewScope Statement DeleteScope {in_loop--; } ;
+Statement : BREAK {
+    if(!in_loop){
+        errorUnexpectedBreak(yylineno);
+        exit(1); }} SC  ;
+
+Statement : CONTINUE {
+    if(!in_loop){
+        errorUnexpectedContinue(yylineno);
+        exit(1); }} SC  ;
+
+Call : ID LPAREN ExpList RPAREN {
+    string func_id = ((Singelton*)$1)->val;
+    delete($1);
+    vector<string> param_types;
+    while($3){
+        param_types.push_back(((Exp*)$3)->type);
+        Exp* to_delete = ((Exp*)$3);
+        $3 = ((Exp*)$3)->next;
+        delete to_delete;
+    }
+    Function* func = stm.get_function_by_id(func_id);
+    if(!func){
+        errorUndefFunc(yylineno, func_id);
+        exit(1);
+    }
+    auto args_types = func->get_args_types();
+    if(args_types.size() != param_types.size()){
+        errorPrototypeMismatch(yylineno, func_id, args_types);
+        exit(1);
+    }
+    for(size_t i = 0; i < args_types.size(); i++){
+        if(!does_types_match(args_types[i], param_types[i])){
+            errorPrototypeMismatch(yylineno, func_id, args_types);
+            exit(1);
+        }
+    }
+    $$ = new Statement(func->get_type(), func_id);
+} ;
+
+Call : ID LPAREN RPAREN {
+    string func_id = ((Singelton*)$1)->val;
+    delete($1);
+    Function* func = stm.get_function_by_id(func_id);
+    if(!func){
+        errorUndefFunc(yylineno, func_id);
+        exit(1);
+    }
+    auto args_types = func->get_args_types();
+    if(args_types.size() != 0){
+        errorPrototypeMismatch(yylineno, func_id, args_types);
+        exit(1);
+    }
+    $$ = new Statement(func->get_type(), func_id);
+} ;
+
+ExpList : Exp   {$$ = $1;};
+ExpList : Exp COMMA ExpList {$$ = $1; $$->next = $3;};
+Type : INT  { $$ = new Singelton("INT"); };
+Type : BYTE { $$ = new Singelton("BYTE"); };
+Type : BOOL { $$ = new Singelton("BOOL"); };
+
+TypeAnnotation :                                                                {$$ = new Singelton("");};
+TypeAnnotation : CONST                                                          {$$ = new Singelton("CONST");};
+
+Exp : LPAREN Exp RPAREN { $$ = $2; };
+
+Exp : Exp ADDSUB Exp {
+    if (!are_numeric(((Exp*)$1)->type, ((Exp*)$3)->type))
+    {
+        errorMismatch(yylineno);
+        delete($1); delete($3);
+        exit(1);
+    }
+    if (((Exp*)$1)->type == "INT" || ((Exp*)$3)->type == "INT")
+    {
+        $$ = new Exp("INT");
+    }
+    else
+    {
+        $$ = new Exp("BYTE");
+    }
+
+    delete($1); delete($3);
+ };
+
+Exp : Exp MULDIV Exp {
+        if (!are_numeric(((Exp*)$1)->type, ((Exp*)$3)->type))
+        {
+            errorMismatch(yylineno);
+            delete($1); delete($3);
+            exit(1);
+        }
+        if (((Exp*)$1)->type == "INT" || ((Exp*)$3)->type == "INT")
+        {
+            $$ = new Exp("INT");
+        }
+        else
+        {
+            $$ = new Exp("BYTE");
+        }
+
+        delete($1); delete($3);
+     };
+
+Exp : ID  {
+    string id_name = ((Singelton*)$1)->val;
+    string type = stm.get_type_by_id(id_name);
+    delete($1);
+    if (type == "UNDEFINED" || stm.get_function_by_id(id_name)) { //id doesn't define or id is func but call as parameter.
+        errorUndef(yylineno, id_name);
+        exit(1);
+    }
+    Exp* new_exp = new Exp(type);
+    $$ = new_exp;} ;
+
+Exp : Call  {
+    string call_type = ((Statement*)$1)->type;
+    delete($1);
+    $$ = new Exp(call_type); };
+
+Exp : NUM {delete($1); $$ = new Exp("INT"); };
+
+Exp : NUM B {
+    int value = ((Number*)$1)->val;
+    delete($1);
+    if(value > 255){
+        errorByteTooLarge(yylineno, to_string(value));
+        exit(1);
+    }
+    $$ = new Exp("BYTE"); };
+
+Exp : STRING { $$ = new Exp("STRING"); };
+Exp : TRUE { $$ = new Exp("BOOL"); };
+Exp : FALSE { $$ = new Exp("BOOL"); };
+
+Exp : NOT Exp {
+        if (((Exp*)$2)->type != "BOOL")
+        {
+            errorMismatch(yylineno);
+            delete($2);
+            exit(1);
+        }
+        $$ = new Exp("BOOL");
+        delete($2);
+     };
+
+Exp : Exp AND Exp {
+       if( (((Exp*)$1)->type != "BOOL") || (((Exp*)$3)->type != "BOOL") )
+       {
+           errorMismatch(yylineno);
+           delete($1); delete($3);
+           exit(1);
+       }
+       $$ = new Exp("BOOL");
+       delete($1); delete($3);
+    };
+
+Exp : Exp OR Exp {
+    if( (((Exp*)$1)->type != "BOOL") || (((Exp*)$3)->type != "BOOL") )
+    {
+        errorMismatch(yylineno);
+        delete($1); delete($3);
+        exit(1);
+    }
+    $$ = new Exp("BOOL");
+    delete($1); delete($3);
+ };
+
+Exp : Exp EQUALITY Exp {
+    if (!are_numeric(((Exp*)$1)->type, ((Exp*)$3)->type))
+    {
+        errorMismatch(yylineno);
+        delete($1); delete($3);
+        exit(1);
+    }
+    $$ = new Exp("BOOL");
+    delete($1); delete($3);
+ };
+
+
+Exp : Exp RELOP Exp  {
+    if (!are_numeric(((Exp*)$1)->type, ((Exp*)$3)->type))
+    {
+        errorMismatch(yylineno);
+        delete($1); delete($3);
+        exit(1);
+    }
+    $$ = new Exp("BOOL");
+    delete($1); delete($3);
+ };
+
+//TODO: check piazza and change the error type
+Exp : LPAREN Type RPAREN Exp{
+  string casting_type = ((Singelton*)$2)->val;
+  string exp_type = ((Singelton*)$4)->val;
+  delete($2); delete($4);
+  if(casting_type != "INT" && casting_type != "BYTE"){
+      //error
+      exit(1);
+  }
+  if(exp_type != "INT" && exp_type != "BYTE"){
+      //error
+      exit(1);
+  }
+  $$ = new Exp(casting_type);
+};
+
+CheckBoolScope : LPAREN Exp {
+    if(((Exp*)$2)->type != "BOOL"){
+        delete($2);
+        errorMismatch(yylineno);
+        exit(1);
+    }
+    delete($2);
+} RPAREN ;
+
+NewScope: {stm.new_scope();};
+DeleteScope: {stm.delete_scope();} ;
+%%
+
+
+int main (){
+    yyparse();
+    if (!stm.main_func_was_declared)
+    {
+        errorMainMissing();
+        exit(1);
+    }
+    stm.delete_scope();
+}
+
+int yyerror(const char * message){
+    errorSyn(yylineno);
+    exit(1);
+}
