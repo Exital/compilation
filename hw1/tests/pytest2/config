@@ -1,0 +1,6 @@
+NUM_OF_TOKENS=100
+NUM_OF_TESTS=5
+EXEC_FILE=hw1.out
+COMP_CMD_1=flex scanner.lex
+COMP_CMD_2=g++ -std=c++17 lex.yy.c hw1.cpp -o hw1.out
+TOKEN_TYPES=BASIC BINOP RELOP COMMENT ID NUM STRING
