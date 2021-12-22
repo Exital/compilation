@@ -50,7 +50,7 @@ Exp* handle_relop(Exp* exp1, Exp* exp2){
         exit(1);
     }
 
-    delete($1); delete($3);
+    delete(exp1); delete(exp2);
     return = new Exp("BOOL");
 }
 
@@ -289,11 +289,11 @@ TypeAnnotation : CONST                                                          
 Exp : LPAREN Exp RPAREN { $$ = $2; };
 
 Exp : Exp ADDSUB Exp {
-    $$ = handle_binop($1, $3);
+    $$ = handle_binop((Exp*)$1, (Exp*)$3);
  };
 
 Exp : Exp MULDIV Exp {
-    $$ = handle_binop($1, $3);
+    $$ = handle_binop((Exp*)$1, (Exp*)$3);
 };
 
 Exp : ID  {
@@ -361,12 +361,12 @@ Exp : Exp OR Exp {
  };
 
 Exp : Exp EQUALITY Exp {
-    $$ = handle_relop($1, $3);
+    $$ = handle_relop((Exp*)$1, (Exp*)$3);
  };
 
 
 Exp : Exp RELOP Exp  {
-    $$ = handle_relop($1, $3);
+    $$ = handle_relop((Exp*)$1, (Exp*)$3);
  };
 
 Exp : LPAREN Type RPAREN Exp{
