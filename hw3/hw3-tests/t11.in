@@ -1,0 +1,3 @@
+void main() {
+    byte t = 5b;
+}
