@@ -31,26 +31,33 @@ public:
 
 class Statement : public Node
 {
-public:
     string type;
     string id;
+public:
+    string get_type() {return type;}
+    string get_id() {return id;}
     Statement(const string &type, const string &id) : type(type), id(id) {}
     Statement(Value *pType, Value *pId) : type(pType->get_str()), id(pId->get_str()) {}
 };
 
 class FormalDecl : public Node
 {
-public:
     string type;
     string id;
     bool is_const;
+public:
+    string get_type() {return type;}
+    string get_id() {return id;}
+    bool get_const() {return is_const;}
     FormalDecl(const string &type, const string &id, bool is_const=false) : type(type), id(id), is_const(is_const) {}
 };
 
 class Exp : public Node
 {
-public:
     string type;
+public:
+    string get_type() {return type;}
+    bool is_numeric() {return (type == "INT") || (type == "BYTE");}
     explicit Exp(const string& type) : type(type) {}
 };
 

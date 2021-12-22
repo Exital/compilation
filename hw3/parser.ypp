@@ -21,17 +21,6 @@ bool does_types_match(string type1, string type2){
     return (type1 == type2) || (type1 == "INT" && type2 == "BYTE");
 }
 
-bool is_numeric(string type){
-    return (type == "INT") || (type == "BYTE");
-}
-
-bool are_numeric(string type1, string type2){
-    return is_numeric(type1) && is_numeric(type2);
-}
-
-bool check_const(string TypeAnnotation){
-    return (TypeAnnotation == "CONST");
-}
 
 %}
 
@@ -83,9 +72,9 @@ FuncDecl : RetType ID LPAREN Formals RPAREN {
     FormalDecl* fd = (FormalDecl*)$4;
     while(fd)
     {
-        arg_types.push_back(fd->type);
-        arg_names.push_back(fd->id);
-        arg_consts.push_back(fd->is_const);
+        arg_types.push_back(fd->get_type());
+        arg_names.push_back(fd->get_id());
+        arg_consts.push_back(fd->get_const());
         FormalDecl* to_delete = fd;
         fd = (FormalDecl*)fd->next;
         delete(to_delete);
@@ -145,7 +134,7 @@ Statement : TypeAnnotation Type ID ASSIGN Exp SC {
    string name = ((Value*)$3)->get_str();
    string type = ((Value*)$2)->get_str();
    bool constvar = ((ConstType*)$1)->get_const();
-   string exp_type = ((Exp*)$5)->type;
+   string exp_type = ((Exp*)$5)->get_type();
    delete($1);
    delete($2); delete($3); delete($5);
    if(does_types_match(type, exp_type)) {
@@ -162,7 +151,7 @@ Statement : ID ASSIGN Exp SC    {
    string id = ((Value*)$1)->get_str();
    string type = st.get_type_by_id(id);
    bool constID = st.get_const_by_id(id);
-   string exp_type = ((Exp*)$3)->type;
+   string exp_type = ((Exp*)$3)->get_type();
    delete($1); delete($3);
    if(type == "ERROR" || st.get_function_by_id(id)){
        errorUndef(yylineno, id);
@@ -189,7 +178,7 @@ Statement : RETURN SC   {
 };
 
 Statement : RETURN Exp SC   {
-    string exp_type = ((Exp*)$2)->type;
+    string exp_type = ((Exp*)$2)->get_type();
     delete($2);
     if(exp_type == "VOID" || !does_types_match(st.last_func_return_type, exp_type)){
         errorMismatch(yylineno);
@@ -215,7 +204,7 @@ Call : ID LPAREN ExpList RPAREN {
     delete($1);
     vector<string> param_types;
     while($3){
-        param_types.push_back(((Exp*)$3)->type);
+        param_types.push_back(((Exp*)$3)->get_type());
         Exp* to_delete = ((Exp*)$3);
         $3 = ((Exp*)$3)->next;
         delete to_delete;
@@ -267,13 +256,13 @@ TypeAnnotation : CONST                                                          
 Exp : LPAREN Exp RPAREN { $$ = $2; };
 
 Exp : Exp ADDSUB Exp {
-    if (!are_numeric(((Exp*)$1)->type, ((Exp*)$3)->type))
+    if (!are_numeric(((Exp*)$1)->get_type(), ((Exp*)$3)->get_type()))
     {
         errorMismatch(yylineno);
         delete($1); delete($3);
         exit(1);
     }
-    if (((Exp*)$1)->type == "INT" || ((Exp*)$3)->type == "INT")
+    if (((Exp*)$1)->get_type() == "INT" || ((Exp*)$3)->get_type() == "INT")
     {
         $$ = new Exp("INT");
     }
@@ -286,13 +275,13 @@ Exp : Exp ADDSUB Exp {
  };
 
 Exp : Exp MULDIV Exp {
-        if (!are_numeric(((Exp*)$1)->type, ((Exp*)$3)->type))
+        if (!are_numeric(((Exp*)$1)->get_type(), ((Exp*)$3)->get_type()))
         {
             errorMismatch(yylineno);
             delete($1); delete($3);
             exit(1);
         }
-        if (((Exp*)$1)->type == "INT" || ((Exp*)$3)->type == "INT")
+        if (((Exp*)$1)->get_type() == "INT" || ((Exp*)$3)->get_type() == "INT")
         {
             $$ = new Exp("INT");
         }
@@ -316,7 +305,7 @@ Exp : ID  {
     $$ = new_exp;} ;
 
 Exp : Call  {
-    string call_type = ((Statement*)$1)->type;
+    string call_type = ((Statement*)$1)->get_type();
     delete($1);
     $$ = new Exp(call_type); };
 
@@ -336,7 +325,7 @@ Exp : TRUE { $$ = new Exp("BOOL"); };
 Exp : FALSE { $$ = new Exp("BOOL"); };
 
 Exp : NOT Exp {
-        if (((Exp*)$2)->type != "BOOL")
+        if (((Exp*)$2)->get_type() != "BOOL")
         {
             errorMismatch(yylineno);
             delete($2);
@@ -347,7 +336,7 @@ Exp : NOT Exp {
      };
 
 Exp : Exp AND Exp {
-       if( (((Exp*)$1)->type != "BOOL") || (((Exp*)$3)->type != "BOOL") )
+       if( (((Exp*)$1)->get_type() != "BOOL") || (((Exp*)$3)->get_type() != "BOOL") )
        {
            errorMismatch(yylineno);
            delete($1); delete($3);
@@ -358,7 +347,7 @@ Exp : Exp AND Exp {
     };
 
 Exp : Exp OR Exp {
-    if( (((Exp*)$1)->type != "BOOL") || (((Exp*)$3)->type != "BOOL") )
+    if( (((Exp*)$1)->get_type() != "BOOL") || (((Exp*)$3)->get_type() != "BOOL") )
     {
         errorMismatch(yylineno);
         delete($1); delete($3);
@@ -369,7 +358,7 @@ Exp : Exp OR Exp {
  };
 
 Exp : Exp EQUALITY Exp {
-    if (!are_numeric(((Exp*)$1)->type, ((Exp*)$3)->type))
+    if (!are_numeric(((Exp*)$1)->get_type(), ((Exp*)$3)->get_type()))
     {
         errorMismatch(yylineno);
         delete($1); delete($3);
@@ -381,7 +370,7 @@ Exp : Exp EQUALITY Exp {
 
 
 Exp : Exp RELOP Exp  {
-    if (!are_numeric(((Exp*)$1)->type, ((Exp*)$3)->type))
+    if (!are_numeric(((Exp*)$1)->get_type(), ((Exp*)$3)->get_type()))
     {
         errorMismatch(yylineno);
         delete($1); delete($3);
@@ -407,7 +396,7 @@ Exp : LPAREN Type RPAREN Exp{
 };
 
 CheckBoolScope : LPAREN Exp {
-    if(((Exp*)$2)->type != "BOOL"){
+    if(((Exp*)$2)->get_type() != "BOOL"){
         delete($2);
         errorMismatch(yylineno);
         exit(1);
