@@ -55,7 +55,7 @@ Exp* handle_relop(Exp* exp1, Exp* exp2){
 }
 
 Exp* handle_logic(Exp* exp1, Exp* exp2){
-    if(!(exp1->is_logic()) || !(exp2->is_logic())
+    if((!exp1->is_logic()) || (!exp2->is_logic())
     {
         errorMismatch(yylineno);
         delete(exp1); delete(exp2);
