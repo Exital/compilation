@@ -30,7 +30,7 @@ class Function : public Symbol{
     bool is_main = false;
 
 public:
-    Function(string id, string type, vector<string> argTypes, bool is_const) : Symbol(id, type, is_const), argTypes(argTypes) {
+    Function(string id, string type, vector<string> argTypes, bool is_const=false) : Symbol(id, type, is_const), argTypes(argTypes) {
         is_main = (id == "main") && (type == "VOID") && (argTypes.empty());
     }
     bool& get_is_main(){return is_main;}
@@ -63,7 +63,7 @@ public:
     void delete_scope();
     bool get_main_declared() {return was_main_declared;}
     string get_last_return_type() {return last_func_return_type;}
-    ~SymbolsTableManager() = default;
+    ~SymbolTable() = default;
 };
 
 #endif //HW3_SYMBOLTABLE_H
