@@ -58,6 +58,7 @@ class Exp : public Node
 public:
     string get_type() {return type;}
     bool is_numeric() {return (type == "INT") || (type == "BYTE");}
+    bool is_logic() {return type == "BOOL";}
     explicit Exp(const string& type) : type(type) {}
 };
 

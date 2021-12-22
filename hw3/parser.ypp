@@ -16,7 +16,7 @@ extern char* yytext;
 SymbolTable st;
 int in_loop = 0;
 
-bool does_types_match(string type1, string type2){
+bool can_assign_types(string type1, string type2){
     //return true if the exps of type2 can be assign to type1
     return (type1 == type2) || (type1 == "INT" && type2 == "BYTE");
 }
@@ -50,6 +50,17 @@ Exp* handle_relop(Exp* exp1, Exp* exp2){
         exit(1);
     }
 
+    delete(exp1); delete(exp2);
+    return new Exp("BOOL");
+}
+
+Exp* handle_logic(Exp* exp1, Exp* exp2){
+    if(!(exp1->is_logic()) || !(exp2->is_logic())
+    {
+        errorMismatch(yylineno);
+        delete(exp1); delete(exp2);
+        exit(1);
+    }
     delete(exp1); delete(exp2);
     return new Exp("BOOL");
 }
@@ -170,7 +181,7 @@ Statement : TypeAnnotation Type ID ASSIGN Exp SC {
    string exp_type = ((Exp*)$5)->get_type();
    delete($1);
    delete($2); delete($3); delete($5);
-   if(does_types_match(type, exp_type)) {
+   if(can_assign_types(type, exp_type)) {
        if(!st.add_symbol(name, type, constvar)){
            errorDef(yylineno, name);
            exit(1);
@@ -190,7 +201,7 @@ Statement : ID ASSIGN Exp SC    {
        errorUndef(yylineno, id);
        exit(1);
    }
-   if(!does_types_match(type, exp_type)){
+   if(!can_assign_types(type, exp_type)){
        errorMismatch(yylineno);
        exit(1);
    }
@@ -213,7 +224,7 @@ Statement : RETURN SC   {
 Statement : RETURN Exp SC   {
     string exp_type = ((Exp*)$2)->get_type();
     delete($2);
-    if(exp_type == "VOID" || !does_types_match(st.last_func_return_type, exp_type)){
+    if(exp_type == "VOID" || !can_assign_types(st.last_func_return_type, exp_type)){
         errorMismatch(yylineno);
         exit(1);
     }
@@ -253,7 +264,7 @@ Call : ID LPAREN ExpList RPAREN {
         exit(1);
     }
     for(size_t i = 0; i < args_types.size(); i++){
-        if(!does_types_match(args_types[i], param_types[i])){
+        if(!can_assign_types(args_types[i], param_types[i])){
             errorPrototypeMismatch(yylineno, func_id, args_types);
             exit(1);
         }
@@ -300,7 +311,7 @@ Exp : ID  {
     string id_name = ((Value*)$1)->get_str();
     string type = st.get_type_by_id(id_name);
     delete($1);
-    if (type == "ERROR" || st.get_function_by_id(id_name)) { //id doesn't define or id is func but call as parameter.
+    if (type == "ERROR" || st.get_function_by_id(id_name)) {
         errorUndef(yylineno, id_name);
         exit(1);
     }
@@ -328,7 +339,7 @@ Exp : TRUE { $$ = new Exp("BOOL"); };
 Exp : FALSE { $$ = new Exp("BOOL"); };
 
 Exp : NOT Exp {
-        if (((Exp*)$2)->get_type() != "BOOL")
+        if (!((Exp*)$2)->is_logic())
         {
             errorMismatch(yylineno);
             delete($2);
@@ -339,26 +350,14 @@ Exp : NOT Exp {
      };
 
 Exp : Exp AND Exp {
-       if( (((Exp*)$1)->get_type() != "BOOL") || (((Exp*)$3)->get_type() != "BOOL") )
-       {
-           errorMismatch(yylineno);
-           delete($1); delete($3);
-           exit(1);
-       }
-       $$ = new Exp("BOOL");
-       delete($1); delete($3);
-    };
+    $$ = handle_logic((Exp*)$1, (Exp*)$3);
+
+};
 
 Exp : Exp OR Exp {
-    if( (((Exp*)$1)->get_type() != "BOOL") || (((Exp*)$3)->get_type() != "BOOL") )
-    {
-        errorMismatch(yylineno);
-        delete($1); delete($3);
-        exit(1);
-    }
-    $$ = new Exp("BOOL");
-    delete($1); delete($3);
- };
+    $$ = handle_logic((Exp*)$1, (Exp*)$3);
+
+};
 
 Exp : Exp EQUALITY Exp {
     $$ = handle_relop((Exp*)$1, (Exp*)$3);
@@ -385,7 +384,7 @@ Exp : LPAREN Type RPAREN Exp{
 };
 
 CheckBoolScope : LPAREN Exp {
-    if(((Exp*)$2)->get_type() != "BOOL"){
+    if(!((Exp*)$2)->is_logic()){
         delete($2);
         errorMismatch(yylineno);
         exit(1);
