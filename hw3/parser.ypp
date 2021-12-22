@@ -185,7 +185,7 @@ Statement : ID ASSIGN Exp SC    {
 Statement : Call SC {$$ = $1;};
 
 Statement : RETURN SC   {
-    if(st.get_last_return_type != "VOID"){
+    if(st.last_func_return_type != "VOID"){
         errorMismatch(yylineno);
         exit(1);
     }
@@ -194,7 +194,7 @@ Statement : RETURN SC   {
 Statement : RETURN Exp SC   {
     string exp_type = ((Exp*)$2)->type;
     delete($2);
-    if(exp_type == "VOID" || !does_types_match(st.get_last_return_type, exp_type)){
+    if(exp_type == "VOID" || !does_types_match(st.last_func_return_type, exp_type)){
         errorMismatch(yylineno);
         exit(1);
     }
@@ -425,7 +425,7 @@ DeleteScope: {st.delete_scope();} ;
 
 int main (){
     yyparse();
-    if (!st.get_main_declared)
+    if (!st.was_main_declared)
     {
         errorMainMissing();
         exit(1);

@@ -46,10 +46,9 @@ class SymbolTable {
     stack<int> offsets;
     unordered_map<string, Symbol*> declared_symbols;
 
+public:
     string last_func_return_type;
     bool was_main_declared = false;
-
-public:
     SymbolTable();
 
     void new_scope();
@@ -61,8 +60,6 @@ public:
     bool get_const_by_id(string id);
     Function* get_function_by_id(string id);
     void delete_scope();
-    bool get_main_declared() {return was_main_declared;}
-    string get_last_return_type() {return last_func_return_type;}
     ~SymbolTable() = default;
 };
 
