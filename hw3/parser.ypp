@@ -51,7 +51,7 @@ Exp* handle_relop(Exp* exp1, Exp* exp2){
     }
 
     delete(exp1); delete(exp2);
-    return = new Exp("BOOL");
+    return new Exp("BOOL");
 }
 
 
