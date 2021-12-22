@@ -1,7 +1,7 @@
-#ifndef COMPILATION_TOKENCLASSES_H
-#define COMPILATION_TOKENCLASSES_H
+#ifndef TOKENTYPES_H
+#define TOKENTYPES_H
 #include <string>
-#include <vector>
+
 using namespace std;
 class Node
 {
@@ -43,7 +43,6 @@ public:
     string id;
     bool is_const;
     FormalDecl(const string &type, const string &id, bool is_const=false) : type(type), id(id), is_const(is_const) {}
-    //FormalDecl(Singelton *pType, Singelton *pId) : type(pType->val), id(pId->val) {}
 };
 
 class Exp : public Node
@@ -53,4 +52,4 @@ public:
     explicit Exp(const string& type) : type(type) {}
 };
 
-#endif //COMPILATION_TOKENCLASSES_H
+#endif //TOKENTYPES_H
