@@ -65,7 +65,7 @@ string SymbolTable::add_function_args_symbols(vector<string> arg_ids, vector<str
         if (id_exists(arg_ids[i])){
             return arg_ids[i];
         }
-        Symbol* new_symbol = new Symbol(arg_ids[i], arg_types[i], arg_consts[i]);
+        Symbol* new_symbol = new Symbol(arg_ids[i], argTypes[i], arg_consts[i]);
         declared_symbols.insert({arg_ids[i], new_symbol});
         new_symbol->set_offset(-(i+1));
         scopes.top().push_back(new_symbol);
