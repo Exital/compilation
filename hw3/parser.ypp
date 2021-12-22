@@ -16,11 +16,6 @@ extern char* yytext;
 SymbolTable st;
 int in_loop = 0;
 
-bool can_assign_types(string type1, string type2){
-    //return true if the exps of type2 can be assign to type1
-    return (type1 == type2) || (type1 == "INT" && type2 == "BYTE");
-}
-
 Exp* handle_binop(Exp* exp1, Exp* exp2){
     if ((!exp1->is_numeric()) || (!exp2->is_numeric()))
     {
@@ -52,6 +47,11 @@ Exp* handle_relop(Exp* exp1, Exp* exp2){
 
     delete(exp1); delete(exp2);
     return new Exp("BOOL");
+}
+
+bool can_assign_types(string type1, string type2){
+    //true if type2 can be assigned into type1
+    return (type1 == type2) || (type1 == "INT" && type2 == "BYTE");
 }
 
 Exp* handle_logic(Exp* exp1, Exp* exp2){
