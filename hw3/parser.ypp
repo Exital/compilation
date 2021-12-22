@@ -21,6 +21,27 @@ bool does_types_match(string type1, string type2){
     return (type1 == type2) || (type1 == "INT" && type2 == "BYTE");
 }
 
+string handle_binop(Exp* exp1, Exp* exp2){
+    if ((!exp1->is_numeric()) || (!exp2->is_numeric()))
+    {
+        errorMismatch(yylineno);
+        delete($1); delete($3);
+        exit(1);
+    }
+    Exp* result;
+    if (((Exp*)$1)->get_type() == "BYTE" && ((Exp*)$3)->get_type() == "BYTE")
+    {
+        result = new Exp("BYTE");
+    }
+    else
+    {
+        result = new Exp("INT");
+    }
+
+    delete($1); delete($3);
+    return result;
+}
+
 
 %}
 
@@ -256,42 +277,12 @@ TypeAnnotation : CONST                                                          
 Exp : LPAREN Exp RPAREN { $$ = $2; };
 
 Exp : Exp ADDSUB Exp {
-    if (!are_numeric(((Exp*)$1)->get_type(), ((Exp*)$3)->get_type()))
-    {
-        errorMismatch(yylineno);
-        delete($1); delete($3);
-        exit(1);
-    }
-    if (((Exp*)$1)->get_type() == "INT" || ((Exp*)$3)->get_type() == "INT")
-    {
-        $$ = new Exp("INT");
-    }
-    else
-    {
-        $$ = new Exp("BYTE");
-    }
-
-    delete($1); delete($3);
+    $$ = handle_binop($1, $3);
  };
 
 Exp : Exp MULDIV Exp {
-        if (!are_numeric(((Exp*)$1)->get_type(), ((Exp*)$3)->get_type()))
-        {
-            errorMismatch(yylineno);
-            delete($1); delete($3);
-            exit(1);
-        }
-        if (((Exp*)$1)->get_type() == "INT" || ((Exp*)$3)->get_type() == "INT")
-        {
-            $$ = new Exp("INT");
-        }
-        else
-        {
-            $$ = new Exp("BYTE");
-        }
-
-        delete($1); delete($3);
-     };
+    $$ = handle_binop($1, $3);
+};
 
 Exp : ID  {
     string id_name = ((Value*)$1)->get_str();
