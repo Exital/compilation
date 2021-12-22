@@ -41,8 +41,8 @@ continue                            return CONTINUE;
 (==|!=)								              return EQUALITY;
 (\+|\-)				                      return ADDSUB;
 (\*|\/)								              return MULDIV;
-[a-zA-Z][a-zA-Z0-9]*      	        {yylval = new Singelton(yytext); return ID;}
-[0]|[1-9][0-9]*                     {yylval = new Number(yytext); return NUM;}
+[a-zA-Z][a-zA-Z0-9]*      	        {yylval = new Value(yytext); return ID;}
+[0]|[1-9][0-9]*                     {yylval = new Value(yytext); return NUM;}
 \"([^\n\r\"\\]|\\[rnt"\\])+\"       return STRING;
 \/\/[^\r\n]*(\r|\n|\r\n)?           ;
 .									                  {output::errorLex(yylineno); exit(0);};

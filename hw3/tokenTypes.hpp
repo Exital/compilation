@@ -11,20 +11,22 @@ public:
     virtual ~Node() = default;
 };
 
-class Singelton : public Node
+class Value : public Node
 {
+    string value;
+
 public:
-    string val;
-    explicit Singelton(const string& val) : val(val) {}
+    string get_str(){return value;}
+    int get_num() {return stoi(value);}
+    explicit Value(const string& value) : value(value) {}
 };
 
-class Number : public Node
+class ConstType : public Node
 {
+    bool is_const;
 public:
-    int val;
-    explicit Number(const string& str_val) {
-        val = stoi(str_val);
-    }
+    bool get_const() {return is_const;}
+    explicit ConstType(const bool& is_const) : is_const(is_const) {}
 };
 
 class Statement : public Node

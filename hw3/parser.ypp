@@ -74,8 +74,8 @@ Funcs :                                                                    {};
 Funcs : FuncDecl Funcs                                                     {};
 
 FuncDecl : RetType ID LPAREN Formals RPAREN {
-    string func_name = ((Singelton*)$2)->val;
-    string ret_type = ((Singelton*)$1)->val;
+    string func_name = ((Value*)$2)->get_str();
+    string ret_type = ((Value*)$1)->get_str();
     delete($1); delete($2);
     vector<string> arg_types;
     vector<string> arg_names;
@@ -104,7 +104,7 @@ FuncDecl : RetType ID LPAREN Formals RPAREN {
            LBRACE Statements RBRACE {st.delete_scope();};
 
 RetType : Type {$$ = $1;};
-   | VOID {$$ = new Singelton("VOID");};
+   | VOID {$$ = new Value("VOID");};
 
 Formals : {$$ = NULL;}
      | FormalsList {$$ = $1;};
@@ -113,11 +113,10 @@ FormalsList : FormalDecl { $$ = $1;};
            |FormalDecl COMMA FormalsList {$$ = $1; $$->next = $3;};
 
 FormalDecl : TypeAnnotation Type ID {
-   string name = ((Singelton*)$3)->val;
-   string type = ((Singelton*)$2)->val;
-   string constvar = ((Singelton*)$1)->val;
-   bool constflag = check_const(constvar);
-   $$ = new FormalDecl(type, name, constflag);
+   string name = ((Value*)$3)->get_str();
+   string type = ((Value*)$2)->get_str();
+   bool constvar = ((ConstType*)$1)->get_const();
+   $$ = new FormalDecl(type, name, constvar);
    delete($1);
    delete($2); delete($3); };
 
@@ -127,32 +126,30 @@ Statements : Statement  {$$ = $1;}
 Statement : LBRACE NewScope Statements RBRACE DeleteScope;
 
 Statement : TypeAnnotation Type ID SC {
-    string name = ((Singelton*)$3)->val;
-    string type = ((Singelton*)$2)->val;
-    string constvar = ((Singelton*)$1)->val;
+    string name = ((Value*)$3)->get_str();
+    string type = ((Value*)$2)->get_str();
+    bool constvar = ((ConstType*)$1)->get_const();
     delete($1);
     delete($2); delete($3);
-    bool constflag = check_const(constvar);
-    if(constflag){
+    if(constvar){
       errorConstDef(yylineno);
       exit(1);
     }
-    if(!st.add_symbol(name, type, constflag)){
+    if(!st.add_symbol(name, type, constvar)){
         errorDef(yylineno, name);
         exit(1);
     }
  };
 
 Statement : TypeAnnotation Type ID ASSIGN Exp SC {
-   string name = ((Singelton*)$3)->val;
-   string type = ((Singelton*)$2)->val;
-   string constvar = ((Singelton*)$1)->val;
+   string name = ((Value*)$3)->get_str();
+   string type = ((Value*)$2)->get_str();
+   string constvar = ((ConstType*)$1)->get_const();
    string exp_type = ((Exp*)$5)->type;
    delete($1);
    delete($2); delete($3); delete($5);
-   bool constflag = check_const(constvar);
    if(does_types_match(type, exp_type)) {
-       if(!st.add_symbol(name, type, constflag)){
+       if(!st.add_symbol(name, type, constvar)){
            errorDef(yylineno, name);
            exit(1);
        }
@@ -162,7 +159,7 @@ Statement : TypeAnnotation Type ID ASSIGN Exp SC {
    }};
 
 Statement : ID ASSIGN Exp SC    {
-   string id = ((Singelton*)$1)->val;
+   string id = ((Value*)$1)->get_str();
    string type = st.get_type_by_id(id);
    bool constID = st.get_const_by_id(id);
    string exp_type = ((Exp*)$3)->type;
@@ -214,7 +211,7 @@ Statement : CONTINUE {
         exit(1); }} SC  ;
 
 Call : ID LPAREN ExpList RPAREN {
-    string func_id = ((Singelton*)$1)->val;
+    string func_id = ((Value*)$1)->get_str();
     delete($1);
     vector<string> param_types;
     while($3){
@@ -243,7 +240,7 @@ Call : ID LPAREN ExpList RPAREN {
 } ;
 
 Call : ID LPAREN RPAREN {
-    string func_id = ((Singelton*)$1)->val;
+    string func_id = ((Value*)$1)->get_str();
     delete($1);
     Function* func = st.get_function_by_id(func_id);
     if(!func){
@@ -260,12 +257,12 @@ Call : ID LPAREN RPAREN {
 
 ExpList : Exp   {$$ = $1;};
 ExpList : Exp COMMA ExpList {$$ = $1; $$->next = $3;};
-Type : INT  { $$ = new Singelton("INT"); };
-Type : BYTE { $$ = new Singelton("BYTE"); };
-Type : BOOL { $$ = new Singelton("BOOL"); };
+Type : INT  { $$ = new Value("INT"); };
+Type : BYTE { $$ = new Value("BYTE"); };
+Type : BOOL { $$ = new Value("BOOL"); };
 
-TypeAnnotation :                                                                {$$ = new Singelton("");};
-TypeAnnotation : CONST                                                          {$$ = new Singelton("CONST");};
+TypeAnnotation :                                                                {$$ = new ConstType(false);};
+TypeAnnotation : CONST                                                          {$$ = new ConstType(true);};
 
 Exp : LPAREN Exp RPAREN { $$ = $2; };
 
@@ -308,7 +305,7 @@ Exp : Exp MULDIV Exp {
      };
 
 Exp : ID  {
-    string id_name = ((Singelton*)$1)->val;
+    string id_name = ((Value*)$1)->get_str();
     string type = st.get_type_by_id(id_name);
     delete($1);
     if (type == "ERROR" || st.get_function_by_id(id_name)) { //id doesn't define or id is func but call as parameter.
@@ -326,7 +323,7 @@ Exp : Call  {
 Exp : NUM {delete($1); $$ = new Exp("INT"); };
 
 Exp : NUM B {
-    int value = ((Number*)$1)->val;
+    int value = ((Value*)$1)->get_num();
     delete($1);
     if(value > 255){
         errorByteTooLarge(yylineno, to_string(value));
@@ -395,8 +392,8 @@ Exp : Exp RELOP Exp  {
  };
 
 Exp : LPAREN Type RPAREN Exp{
-  string casting_type = ((Singelton*)$2)->val;
-  string exp_type = ((Singelton*)$4)->val;
+  string casting_type = ((Value*)$2)->get_str();
+  string exp_type = ((Value*)$4)->get_str();
   delete($2); delete($4);
   if(casting_type != "INT" && casting_type != "BYTE"){
       errorMismatch(yylineno);
