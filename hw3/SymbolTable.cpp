@@ -2,7 +2,7 @@
 // Created by Tal Rosenseweig on 22/12/2021.
 //
 
-#include "SymbolTable.h"
+#include "SymbolTable.hpp"
 #include "hw3_output.hpp"
 #include <iostream>
 
