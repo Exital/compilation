@@ -18,6 +18,17 @@ void Function::print_symbol() {
     printID(get_id(), get_offset(), makeFunctionType(get_type(), argTypes));
 }
 
+SymbolTable::SymbolTable()
+{
+    Scope scope;
+    scopes.push(scope);
+    offsets.push(0);
+    vector<string> args = {"STRING"};
+    add_function("print", "VOID", args);
+    args = {"INT"};
+    add_function("printi", "VOID", args);
+}
+
 void SymbolTable::new_scope() {
     Scope scope;
     scopes.push(scope);
