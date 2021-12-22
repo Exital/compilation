@@ -35,7 +35,7 @@ public:
     string type;
     string id;
     Statement(const string &type, const string &id) : type(type), id(id) {}
-    Statement(Singelton *pType, Singelton *pId) : type(pType->val), id(pId->val) {}
+    Statement(Value *pType, Value *pId) : type(pType->val), id(pId->val) {}
 };
 
 class FormalDecl : public Node
