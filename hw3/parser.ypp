@@ -1,6 +1,6 @@
 %{
 #include "hw3_output.hpp"
-#include "SymbolsTablesManager.hpp"
+#include "SymbolTable.hpp"
 #include "tokenTypes.hpp"
 #include <iostream>
 #include <typeinfo>
@@ -13,7 +13,7 @@ extern int yylineno;
 extern int yylex();
 extern char* yytext;
 
-SymbolsTableManager stm;
+SymbolTable st;
 int in_loop = 0;
 
 bool does_types_match(string type1, string type2){
@@ -90,18 +90,18 @@ FuncDecl : RetType ID LPAREN Formals RPAREN {
         fd = (FormalDecl*)fd->next;
         delete(to_delete);
     }
-    if(!(stm.add_function(func_name, ret_type, arg_types))){
+    if(!(st.add_function(func_name, ret_type, arg_types))){
         errorDef(yylineno, func_name);
         exit(1);
     }
-    stm.new_scope();
-    string add_args_res = stm.add_function_args_symbols(arg_names, arg_types, arg_consts);
+    st.new_scope();
+    string add_args_res = st.add_function_args_symbols(arg_names, arg_types, arg_consts);
     if(add_args_res != ""){
         errorDef(yylineno, add_args_res);
         exit(1);
     }
 }
-           LBRACE Statements RBRACE {stm.delete_scope();};
+           LBRACE Statements RBRACE {st.delete_scope();};
 
 RetType : Type {$$ = $1;};
    | VOID {$$ = new Singelton("VOID");};
@@ -137,7 +137,7 @@ Statement : TypeAnnotation Type ID SC {
       errorConstDef(yylineno);
       exit(1);
     }
-    if(!stm.add_symbol(name, type, constflag)){
+    if(!st.add_symbol(name, type, constflag)){
         errorDef(yylineno, name);
         exit(1);
     }
@@ -152,7 +152,7 @@ Statement : TypeAnnotation Type ID ASSIGN Exp SC {
    delete($2); delete($3); delete($5);
    bool constflag = check_const(constvar);
    if(does_types_match(type, exp_type)) {
-       if(!stm.add_symbol(name, type, constflag)){
+       if(!st.add_symbol(name, type, constflag)){
            errorDef(yylineno, name);
            exit(1);
        }
@@ -163,11 +163,11 @@ Statement : TypeAnnotation Type ID ASSIGN Exp SC {
 
 Statement : ID ASSIGN Exp SC    {
    string id = ((Singelton*)$1)->val;
-   string type = stm.get_type_by_id(id);
-   bool constID = stm.get_const_by_id(id);
+   string type = st.get_type_by_id(id);
+   bool constID = st.get_const_by_id(id);
    string exp_type = ((Exp*)$3)->type;
    delete($1); delete($3);
-   if(type == "UNDEFINED" || stm.get_function_by_id(id)){
+   if(type == "ERROR" || st.get_function_by_id(id)){
        errorUndef(yylineno, id);
        exit(1);
    }
@@ -185,7 +185,7 @@ Statement : ID ASSIGN Exp SC    {
 Statement : Call SC {$$ = $1;};
 
 Statement : RETURN SC   {
-    if(stm.ret_type_last_func != "VOID"){
+    if(st.get_last_return_type != "VOID"){
         errorMismatch(yylineno);
         exit(1);
     }
@@ -194,7 +194,7 @@ Statement : RETURN SC   {
 Statement : RETURN Exp SC   {
     string exp_type = ((Exp*)$2)->type;
     delete($2);
-    if(exp_type == "VOID" || !does_types_match(stm.ret_type_last_func, exp_type)){
+    if(exp_type == "VOID" || !does_types_match(st.get_last_return_type, exp_type)){
         errorMismatch(yylineno);
         exit(1);
     }
@@ -223,7 +223,7 @@ Call : ID LPAREN ExpList RPAREN {
         $3 = ((Exp*)$3)->next;
         delete to_delete;
     }
-    Function* func = stm.get_function_by_id(func_id);
+    Function* func = st.get_function_by_id(func_id);
     if(!func){
         errorUndefFunc(yylineno, func_id);
         exit(1);
@@ -245,7 +245,7 @@ Call : ID LPAREN ExpList RPAREN {
 Call : ID LPAREN RPAREN {
     string func_id = ((Singelton*)$1)->val;
     delete($1);
-    Function* func = stm.get_function_by_id(func_id);
+    Function* func = st.get_function_by_id(func_id);
     if(!func){
         errorUndefFunc(yylineno, func_id);
         exit(1);
@@ -309,9 +309,9 @@ Exp : Exp MULDIV Exp {
 
 Exp : ID  {
     string id_name = ((Singelton*)$1)->val;
-    string type = stm.get_type_by_id(id_name);
+    string type = st.get_type_by_id(id_name);
     delete($1);
-    if (type == "UNDEFINED" || stm.get_function_by_id(id_name)) { //id doesn't define or id is func but call as parameter.
+    if (type == "ERROR" || st.get_function_by_id(id_name)) { //id doesn't define or id is func but call as parameter.
         errorUndef(yylineno, id_name);
         exit(1);
     }
@@ -418,19 +418,19 @@ CheckBoolScope : LPAREN Exp {
     delete($2);
 } RPAREN ;
 
-NewScope: {stm.new_scope();};
-DeleteScope: {stm.delete_scope();} ;
+NewScope: {st.new_scope();};
+DeleteScope: {st.delete_scope();} ;
 %%
 
 
 int main (){
     yyparse();
-    if (!stm.main_func_was_declared)
+    if (!st.get_main_declared)
     {
         errorMainMissing();
         exit(1);
     }
-    stm.delete_scope();
+    st.delete_scope();
 }
 
 
