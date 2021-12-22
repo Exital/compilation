@@ -1,7 +1,7 @@
 #!/bin/bash
 make
 
-for i in {1..4}
+for i in {1..7}
 do
    echo "testing test ${i}"
 
