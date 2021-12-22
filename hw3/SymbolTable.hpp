@@ -34,6 +34,7 @@ public:
         is_main = (id == "main") && (type == "VOID") && (argTypes.empty());
     }
     bool& get_is_main(){return is_main;}
+    const vector<string>& get_args_types(){return argTypes;}
     void print_symbol() override;
     ~Function() = default;
 };
