@@ -1,28 +1,28 @@
 
 for file in `ls tests/ | grep in | cut -d"." -f1`; do
-	echo Running test for $file
+	echo Running test for tests/$file
 	./hw3 < tests/${file}.in > tests/${file}
 	diff tests/$file tests/${file}.out
 	echo \*\*\* DONE \*\*\*
 done
 
 for file in `ls katia_tests/ | grep in | cut -d"." -f1`; do
-	echo Running test for $file
-	./hw3 < tests/${file}.in > tests/${file}
-	diff tests/$file tests/${file}.out
+	echo Running test for katia_tests/$file
+	./hw3 < katia_tests/${file}.in > katia_tests/${file}
+	diff katia_tests/$file katia_tests/${file}.out
 	echo \*\*\* DONE \*\*\*
 done
 
 for file in `ls more_tests/ | grep in | cut -d"." -f1`; do
-	echo Running test for $file
-	./hw3 < tests/${file}.in > tests/${file}
-	diff tests/$file tests/${file}.out
+	echo Running test for more_tests/$file
+	./hw3 < more_tests/${file}.in > more_tests/${file}
+	diff more_tests/$file more_tests/${file}.out
 	echo \*\*\* DONE \*\*\*
 done
 
 for file in `ls my_tests/ | grep in | cut -d"." -f1`; do
-	echo Running test for $file
-	./hw3 < tests/${file}.in > tests/${file}
-	diff tests/$file tests/${file}.out
+	echo Running test for my_tests/$file
+	./hw3 < my_tests/${file}.in > my_tests/${file}
+	diff my_tests/$file my_tests/${file}.out
 	echo \*\*\* DONE \*\*\*
 done
