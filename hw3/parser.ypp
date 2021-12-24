@@ -65,6 +65,13 @@ Exp* handle_logic(Exp* exp1, Exp* exp2){
     return new Exp("BOOL");
 }
 
+bool int_or_byte(string type){return type == "INT" || type == "BYTE";}
+
+bool can_be_casted(string from, string to){
+    if (from == to) return true;
+    return int_or_byte(from) && int_or_byte(to);
+}
+
 
 %}
 
@@ -369,14 +376,10 @@ Exp : Exp RELOP Exp  {
  };
 
 Exp : LPAREN Type RPAREN Exp{
-  string casting_type = ((Value*)$2)->get_str();
-  string exp_type = ((Value*)$4)->get_str();
+  string to_type = ((Value*)$2)->get_str();
+  string from_type = ((Exp*)$4)->get_type();
   delete($2); delete($4);
-  if(casting_type != "INT" && casting_type != "BYTE"){
-      errorMismatch(yylineno);
-      exit(1);
-  }
-  if(exp_type != "INT" && exp_type != "BYTE"){
+  if(!(can_be_casted(from_type, to_type))){
       errorMismatch(yylineno);
       exit(1);
   }
