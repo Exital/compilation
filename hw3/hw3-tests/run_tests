@@ -1,0 +1,28 @@
+
+for file in `ls tests/ | grep in | cut -d"." -f1`; do
+	echo Running test for $file
+	./hw3 < tests/${file}.in > tests/${file}
+	diff tests/$file tests/${file}.out
+	echo \*\*\* DONE \*\*\*
+done
+
+for file in `ls katia_tests/ | grep in | cut -d"." -f1`; do
+	echo Running test for $file
+	./hw3 < tests/${file}.in > tests/${file}
+	diff tests/$file tests/${file}.out
+	echo \*\*\* DONE \*\*\*
+done
+
+for file in `ls more_tests/ | grep in | cut -d"." -f1`; do
+	echo Running test for $file
+	./hw3 < tests/${file}.in > tests/${file}
+	diff tests/$file tests/${file}.out
+	echo \*\*\* DONE \*\*\*
+done
+
+for file in `ls my_tests/ | grep in | cut -d"." -f1`; do
+	echo Running test for $file
+	./hw3 < tests/${file}.in > tests/${file}
+	diff tests/$file tests/${file}.out
+	echo \*\*\* DONE \*\*\*
+done

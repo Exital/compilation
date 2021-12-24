@@ -1,13 +1,10 @@
 #!/bin/bash
 make
 
-for i in {1..11}
-do
-   echo "testing test ${i}"
+cp hw3 hw3-tests/hw3
 
-./hw3 < hw3-tests/t${i}.in > hw3-tests/t${i}.res
+cd hw3-tests
 
-diff hw3-tests/t${i}.out hw3-tests/t${i}.res
-done
+./run_tests
 
 echo "finished"
