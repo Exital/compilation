@@ -383,7 +383,7 @@ Exp : LPAREN Type RPAREN Exp{
       errorMismatch(yylineno);
       exit(1);
   }
-  $$ = new Exp(casting_type);
+  $$ = new Exp(to_type);
 };
 
 CheckBoolScope : LPAREN Exp {
