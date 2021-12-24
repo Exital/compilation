@@ -2,8 +2,6 @@
 #include "hw3_output.hpp"
 #include "SymbolTable.hpp"
 #include "tokenTypes.hpp"
-#include <iostream>
-#include <typeinfo>
 
 #define YYSTYPE Node*
 using namespace output;
