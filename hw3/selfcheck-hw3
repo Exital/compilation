@@ -71,7 +71,7 @@ if [ ! -f hw3_output.hpp ]
 fi
 
 wget --no-check-certificate "$makefileurl" &> /dev/null
-if [ ! -f makefile ]
+if [ ! -f Makefile ]
 	then
 		echo "Unable to download makefile!"
 		exit
