@@ -1,0 +1,415 @@
+%{
+#include "hw3_output.hpp"
+#include "SymbolTable.hpp"
+#include "tokenTypes.hpp"
+
+#define YYSTYPE Node*
+using namespace output;
+
+int yyerror(const char * message);
+extern int yylineno;
+extern int yylex();
+extern char* yytext;
+
+SymbolTable st;
+int in_loop = 0;
+
+Exp* handle_binop(Exp* exp1, Exp* exp2){
+    if ((!exp1->is_numeric()) || (!exp2->is_numeric()))
+    {
+        errorMismatch(yylineno);
+        delete(exp1); delete(exp2);
+        exit(1);
+    }
+    Exp* result;
+    if (exp1->get_type() == "BYTE" && (exp2)->get_type() == "BYTE")
+    {
+        result = new Exp("BYTE");
+    }
+    else
+    {
+        result = new Exp("INT");
+    }
+
+    delete(exp1); delete(exp2);
+    return result;
+}
+
+Exp* handle_relop(Exp* exp1, Exp* exp2){
+    if ((!exp1->is_numeric()) || (!exp2->is_numeric()))
+    {
+        errorMismatch(yylineno);
+        delete(exp1); delete(exp2);
+        exit(1);
+    }
+
+    delete(exp1); delete(exp2);
+    return new Exp("BOOL");
+}
+
+bool can_assign_types(string type1, string type2){
+    //true if type2 can be assigned into type1
+    return (type1 == type2) || (type1 == "INT" && type2 == "BYTE");
+}
+
+Exp* handle_logic(Exp* exp1, Exp* exp2){
+    if((!exp1->is_logic()) || (!exp2->is_logic()))
+    {
+        errorMismatch(yylineno);
+        delete(exp1); delete(exp2);
+        exit(1);
+    }
+    delete(exp1); delete(exp2);
+    return new Exp("BOOL");
+}
+
+bool int_or_byte(string type){return type == "INT" || type == "BYTE";}
+
+bool can_be_casted(string from, string to){
+    if (from == to) return true;
+    return int_or_byte(from) && int_or_byte(to);
+}
+
+
+%}
+
+
+%token VOID
+%token INT
+%token BYTE
+%token B
+%token BOOL
+%token CONST
+%token TRUE
+%token FALSE
+%token RETURN
+%nonassoc IF
+%nonassoc ELSE
+%token WHILE
+%token BREAK
+%token CONTINUE
+%token SC
+%token COMMA
+%token NUM
+%token STRING
+%token ID
+%right ASSIGN
+%left OR
+%left AND
+%left EQUALITY
+%nonassoc RELOP
+%left ADDSUB
+%left MULDIV
+%right NOT
+%left RPAREN
+%left LPAREN
+%token LBRACE
+%token RBRACE
+
+%%
+Program : Funcs                                                            {};
+Funcs :                                                                    {};
+Funcs : FuncDecl Funcs                                                     {};
+
+FuncDecl : RetType ID LPAREN Formals RPAREN {
+    string func_name = ((Value*)$2)->get_str();
+    string ret_type = ((Value*)$1)->get_str();
+    delete($1); delete($2);
+    vector<string> arg_types;
+    vector<string> arg_names;
+    vector<bool> arg_consts;
+    FormalDecl* fd = (FormalDecl*)$4;
+    while(fd)
+    {
+        arg_types.push_back(fd->get_type());
+        arg_names.push_back(fd->get_id());
+        arg_consts.push_back(fd->get_const());
+        FormalDecl* to_delete = fd;
+        fd = (FormalDecl*)fd->next;
+        delete(to_delete);
+    }
+    if(!(st.add_function(func_name, ret_type, arg_types))){
+        errorDef(yylineno, func_name);
+        exit(1);
+    }
+    st.new_scope();
+    string add_args_res = st.add_function_args_symbols(arg_names, arg_types, arg_consts);
+    if(add_args_res != ""){
+        errorDef(yylineno, add_args_res);
+        exit(1);
+    }
+}
+           LBRACE Statements RBRACE {st.delete_scope();};
+
+RetType : Type {$$ = $1;};
+   | VOID {$$ = new Value("VOID");};
+
+Formals : {$$ = NULL;}
+     | FormalsList {$$ = $1;};
+
+FormalsList : FormalDecl { $$ = $1;};
+           |FormalDecl COMMA FormalsList {$$ = $1; $$->next = $3;};
+
+FormalDecl : TypeAnnotation Type ID {
+   string name = ((Value*)$3)->get_str();
+   string type = ((Value*)$2)->get_str();
+   bool constvar = ((ConstType*)$1)->get_const();
+   $$ = new FormalDecl(type, name, constvar);
+   delete($1);
+   delete($2); delete($3); };
+
+Statements : Statement  {$$ = $1;}
+           |Statements Statement   {};
+
+Statement : LBRACE NewScope Statements RBRACE DeleteScope;
+
+Statement : TypeAnnotation Type ID SC {
+    string name = ((Value*)$3)->get_str();
+    string type = ((Value*)$2)->get_str();
+    bool constvar = ((ConstType*)$1)->get_const();
+    delete($1);
+    delete($2); delete($3);
+    if(constvar){
+      errorConstDef(yylineno);
+      exit(1);
+    }
+    if(!st.add_symbol(name, type, constvar)){
+        errorDef(yylineno, name);
+        exit(1);
+    }
+ };
+
+Statement : TypeAnnotation Type ID ASSIGN Exp SC {
+   string name = ((Value*)$3)->get_str();
+   string type = ((Value*)$2)->get_str();
+   bool constvar = ((ConstType*)$1)->get_const();
+   string exp_type = ((Exp*)$5)->get_type();
+   delete($1);
+   delete($2); delete($3); delete($5);
+   if(can_assign_types(type, exp_type)) {
+       if(!st.add_symbol(name, type, constvar)){
+           errorDef(yylineno, name);
+           exit(1);
+       }
+   } else {
+       errorMismatch(yylineno);
+       exit(1);
+   }};
+
+Statement : ID ASSIGN Exp SC    {
+   string id = ((Value*)$1)->get_str();
+   string type = st.get_type_by_id(id);
+   bool constID = st.get_const_by_id(id);
+   string exp_type = ((Exp*)$3)->get_type();
+   delete($1); delete($3);
+   if(type == "ERROR" || st.get_function_by_id(id)){
+       errorUndef(yylineno, id);
+       exit(1);
+   }
+   if(!can_assign_types(type, exp_type)){
+       errorMismatch(yylineno);
+       exit(1);
+   }
+   if(constID){
+      errorConstMismatch(yylineno);
+      exit(1);
+   }
+};
+
+
+Statement : Call SC {$$ = $1;};
+
+Statement : RETURN SC   {
+    if(st.last_func_return_type != "VOID"){
+        errorMismatch(yylineno);
+        exit(1);
+    }
+};
+
+Statement : RETURN Exp SC   {
+    string exp_type = ((Exp*)$2)->get_type();
+    delete($2);
+    if(exp_type == "VOID" || !can_assign_types(st.last_func_return_type, exp_type)){
+        errorMismatch(yylineno);
+        exit(1);
+    }
+};
+
+Statement : IF CheckBoolScope NewScope Statement DeleteScope %prec IF   { } ;
+Statement : IF CheckBoolScope NewScope Statement DeleteScope ELSE NewScope Statement DeleteScope { };
+Statement : WHILE {in_loop++;} CheckBoolScope NewScope Statement DeleteScope {in_loop--; } ;
+Statement : BREAK {
+    if(!in_loop){
+        errorUnexpectedBreak(yylineno);
+        exit(1); }} SC  ;
+
+Statement : CONTINUE {
+    if(!in_loop){
+        errorUnexpectedContinue(yylineno);
+        exit(1); }} SC  ;
+
+Call : ID LPAREN ExpList RPAREN {
+    string func_id = ((Value*)$1)->get_str();
+    delete($1);
+    vector<string> param_types;
+    while($3){
+        param_types.push_back(((Exp*)$3)->get_type());
+        Exp* to_delete = ((Exp*)$3);
+        $3 = ((Exp*)$3)->next;
+        delete to_delete;
+    }
+    Function* func = st.get_function_by_id(func_id);
+    if(!func){
+        errorUndefFunc(yylineno, func_id);
+        exit(1);
+    }
+    auto args_types = func->get_args_types();
+    if(args_types.size() != param_types.size()){
+        errorPrototypeMismatch(yylineno, func_id, args_types);
+        exit(1);
+    }
+    for(size_t i = 0; i < args_types.size(); i++){
+        if(!can_assign_types(args_types[i], param_types[i])){
+            errorPrototypeMismatch(yylineno, func_id, args_types);
+            exit(1);
+        }
+    }
+    $$ = new Statement(func->get_type(), func_id);
+} ;
+
+Call : ID LPAREN RPAREN {
+    string func_id = ((Value*)$1)->get_str();
+    delete($1);
+    Function* func = st.get_function_by_id(func_id);
+    if(!func){
+        errorUndefFunc(yylineno, func_id);
+        exit(1);
+    }
+    auto args_types = func->get_args_types();
+    if(args_types.size() != 0){
+        errorPrototypeMismatch(yylineno, func_id, args_types);
+        exit(1);
+    }
+    $$ = new Statement(func->get_type(), func_id);
+} ;
+
+ExpList : Exp   {$$ = $1;};
+ExpList : Exp COMMA ExpList {$$ = $1; $$->next = $3;};
+Type : INT  { $$ = new Value("INT"); };
+Type : BYTE { $$ = new Value("BYTE"); };
+Type : BOOL { $$ = new Value("BOOL"); };
+
+TypeAnnotation :                                                                {$$ = new ConstType(false);};
+TypeAnnotation : CONST                                                          {$$ = new ConstType(true);};
+
+Exp : LPAREN Exp RPAREN { $$ = $2; };
+
+Exp : Exp ADDSUB Exp {
+    $$ = handle_binop((Exp*)$1, (Exp*)$3);
+ };
+
+Exp : Exp MULDIV Exp {
+    $$ = handle_binop((Exp*)$1, (Exp*)$3);
+};
+
+Exp : ID  {
+    string id_name = ((Value*)$1)->get_str();
+    string type = st.get_type_by_id(id_name);
+    delete($1);
+    if (type == "ERROR" || st.get_function_by_id(id_name)) {
+        errorUndef(yylineno, id_name);
+        exit(1);
+    }
+    Exp* new_exp = new Exp(type);
+    $$ = new_exp;} ;
+
+Exp : Call  {
+    string call_type = ((Statement*)$1)->get_type();
+    delete($1);
+    $$ = new Exp(call_type); };
+
+Exp : NUM {delete($1); $$ = new Exp("INT"); };
+
+Exp : NUM B {
+    int value = ((Value*)$1)->get_num();
+    delete($1);
+    if(value > 255){
+        errorByteTooLarge(yylineno, to_string(value));
+        exit(1);
+    }
+    $$ = new Exp("BYTE"); };
+
+Exp : STRING { $$ = new Exp("STRING"); };
+Exp : TRUE { $$ = new Exp("BOOL"); };
+Exp : FALSE { $$ = new Exp("BOOL"); };
+
+Exp : NOT Exp {
+        if (!((Exp*)$2)->is_logic())
+        {
+            errorMismatch(yylineno);
+            delete($2);
+            exit(1);
+        }
+        $$ = new Exp("BOOL");
+        delete($2);
+     };
+
+Exp : Exp AND Exp {
+    $$ = handle_logic((Exp*)$1, (Exp*)$3);
+
+};
+
+Exp : Exp OR Exp {
+    $$ = handle_logic((Exp*)$1, (Exp*)$3);
+
+};
+
+Exp : Exp EQUALITY Exp {
+    $$ = handle_relop((Exp*)$1, (Exp*)$3);
+ };
+
+
+Exp : Exp RELOP Exp  {
+    $$ = handle_relop((Exp*)$1, (Exp*)$3);
+ };
+
+Exp : LPAREN Type RPAREN Exp{
+  string to_type = ((Value*)$2)->get_str();
+  string from_type = ((Exp*)$4)->get_type();
+  delete($2); delete($4);
+  if(!(can_be_casted(from_type, to_type))){
+      errorMismatch(yylineno);
+      exit(1);
+  }
+  $$ = new Exp(to_type);
+};
+
+CheckBoolScope : LPAREN Exp {
+    if(!((Exp*)$2)->is_logic()){
+        delete($2);
+        errorMismatch(yylineno);
+        exit(1);
+    }
+    delete($2);
+} RPAREN ;
+
+NewScope: {st.new_scope();};
+DeleteScope: {st.delete_scope();} ;
+%%
+
+
+int main (){
+    yyparse();
+    if (!st.was_main_declared)
+    {
+        errorMainMissing();
+        exit(1);
+    }
+    st.delete_scope();
+}
+
+
+int yyerror(const char * message){
+    errorSyn(yylineno);
+    exit(1);
+}
