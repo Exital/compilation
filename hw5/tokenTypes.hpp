@@ -1,6 +1,7 @@
 #ifndef TOKENTYPES_H
 #define TOKENTYPES_H
 #include <string>
+typedef string reg
 
 using namespace std;
 class Node
@@ -55,6 +56,10 @@ public:
 class Exp : public Node
 {
     string type;
+    reg reg;
+    bpList true_list;
+    bpList false_list;
+    string next_label;
 public:
     string get_type() {return type;}
     bool is_numeric() {return (type == "INT") || (type == "BYTE");}
