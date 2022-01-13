@@ -6,11 +6,15 @@
 #include "bp.hpp"
 typedef string reg
 
+string get_return_type_of_binop(Exp* e1, Exp* e2);
+
 // register allocations
 reg allocate_register();
 reg allocate_global_register();
 
 
+Exp* emitAddSub(Exp* e1, Value* op, Exp* e2);
+Exp* emitMulDiv(Exp* e1, Value* op, Exp* e2);
 
 
 

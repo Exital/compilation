@@ -64,7 +64,22 @@ public:
     string get_type() {return type;}
     bool is_numeric() {return (type == "INT") || (type == "BYTE");}
     bool is_logic() {return type == "BOOL";}
-    explicit Exp(const string& type) : type(type) {}
+    reg get_reg(){return reg;}
+    Exp(const string &type, const reg &reg = "", const bpList &true_list = bpList(), const bpList &false_list = bpList(), string next_label = "") : type(type), reg(reg), true_list(true_list), false_list(false_list), next_label(next_label);
+};
+
+class M : public Node
+{
+public:
+    string next_inst;
+    explicit M(const string& val) : next_inst(val) {}
+};
+
+class N : public Node
+{
+public:
+    bpList next_list;
+    explicit N(const bpList &nextLst = bpList()) : next_list(nextLst) {}
 };
 
 #endif //TOKENTYPES_H
