@@ -3,12 +3,13 @@
 unsigned long long register_count = 0;
 reg function_sp = "";
 
+CodeBuffer& buffer = CodeBuffer::instance();
+
 string get_return_type_of_binop(Exp* e1, Exp* e2){
   return (e1->get_type() == e2->get_type()) && (e1->get_type == "BYTE") ? "BYTE" : "INT";
 }
 
 void initBuffer(){
-  CodeBuffer& buffer = CodeBuffer::instance();
   string errorMsg = "Error division by zero";
 
   string declarations = "declare i32 @printf(i8*, ...)\n";

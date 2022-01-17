@@ -2,9 +2,11 @@
 #include "hw3_output.hpp"
 #include "SymbolTable.hpp"
 #include "tokenTypes.hpp"
-
+#include "bp.hpp"
+#include "code_gen.hpp"
 #define YYSTYPE Node*
 using namespace output;
+CodeBuffer& buffer = CodeBuffer::instance();
 
 int yyerror(const char * message);
 extern int yylineno;
@@ -138,9 +140,25 @@ FuncDecl : RetType ID LPAREN Formals RPAREN {
         errorDef(yylineno, add_args_res);
         exit(1);
     }
+    //emit delcaration
+    string llvm_type = (ret_type != "VOID") ? "i32" : "void";
+    string decl = "define " + llvm_type + " @" + func_name + "(";
+    for(size_t = 0; i < arg_types.size(); i++){
+      decl += (i == arg_types.size()-1) ? "i32" : "i32, ";
+    }
+    decl += ") {\n"
+    function_sp = allocate_register();
+    decl += (function_sp + " = alloca [50 x i32]");
+    buffer.emit(decl);
 }
-           LBRACE Statements RBRACE {st.delete_scope();};
-
+           LBRACE Statements RBRACE {
+            st.delete_scope();
+            // todo emit function finish
+            function_sp = "";
+            buffer.emit("ret " + (ret_type == "VOID") ? "void" : "i32 0");
+            buffer.emit("}");
+           };
+// todo: ended up here
 RetType : Type {$$ = $1;};
    | VOID {$$ = new Value("VOID");};
 

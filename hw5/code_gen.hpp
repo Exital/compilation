@@ -36,8 +36,6 @@ Exp* emitRelop(Exp* e1, Value* op, Exp* e2);
 Exp* emitLoad(string id, string type);
 void emitStore(string id, string type, string val);
 
-Exp* emitCallFunc(string r_type, string func_id, const vector<string>& param_types = vector<string>(), const vector<string>& param_regs=vector<string>());
-
 
 
 
