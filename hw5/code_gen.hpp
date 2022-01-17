@@ -6,6 +6,16 @@
 #include "bp.hpp"
 typedef string reg
 
+unordered_map<string, string> llvm_relop_op =
+        {
+            {"==", "eq"},
+            {"!=", "ne"},
+            {"<", "slt"},
+            {">", "sgt"},
+            {"<=", "sle"},
+            {">=", "sge"},
+        };
+
 string get_return_type_of_binop(Exp* e1, Exp* e2);
 
 void initBuffer();
@@ -20,7 +30,7 @@ void generate_check_div_by_zero_code(Exp* e2);
 Exp* emitMulDiv(Exp* e1, Value* op, Exp* e2);
 
 
-
+Exp* emitRelop(Exp* e1, Value* op, Exp* e2);
 
 
 

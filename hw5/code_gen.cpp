@@ -81,5 +81,16 @@ Exp* emitMulDiv(Exp* e1, Value* op, Exp* e2){
     buffer.emit(new_res_reg + " = and i32 255, " + res_reg);
     res_reg = new_res_reg;
   }
-  
+
   return new Exp(res_type, res_reg);
+}
+
+Exp* emitRelop(Exp* e1, Value* op, Exp* e2){
+  string op = llvm_relop_op[op->get_str()];
+
+  reg tmp_reg = allocate_register();
+  buffer.emit(tmp_reg + " = icmp " + op + " i32 " + e1->get_reg() + ", " + e2->get_reg());
+  int cond_br = buffer.emit("br i1 " + tmp_reg + ", label @, label @");
+
+  return new Exp("BOOL", "", makelist(bpItem(cond_br, FIRST)), makelist(bpItem(cond_br, SECOND)));
+}
