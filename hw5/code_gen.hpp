@@ -1,5 +1,5 @@
-#ifndef LLVM_H
-#define LLVM_H
+#ifndef CODE_GEN_H
+#define CODE_GEN_H
 
 #include "tokenTypes.hpp"
 #include "symbolTable.hpp"
@@ -37,6 +37,4 @@ Exp* emitLoad(string id, string type);
 void emitStore(string id, string type, string val);
 
 
-
-
-#endif //LLVM_H
+#endif //CODE_GEN_H
