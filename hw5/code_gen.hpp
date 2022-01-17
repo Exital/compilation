@@ -5,6 +5,7 @@
 #include "symbolTable.hpp"
 #include "bp.hpp"
 typedef string reg
+extern SymbolTable st;
 
 unordered_map<string, string> llvm_relop_op =
         {
@@ -32,8 +33,10 @@ Exp* emitMulDiv(Exp* e1, Value* op, Exp* e2);
 
 Exp* emitRelop(Exp* e1, Value* op, Exp* e2);
 
+Exp* emitLoad(string id, string type);
+void emitStore(string id, string type, string val);
 
-
+Exp* emitCallFunc(string r_type, string func_id, const vector<string>& param_types = vector<string>(), const vector<string>& param_regs=vector<string>());
 
 
 

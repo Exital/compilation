@@ -1,6 +1,7 @@
 #include "code_gen.hpp"
 
 unsigned long long register_count = 0;
+reg function_sp = "";
 
 string get_return_type_of_binop(Exp* e1, Exp* e2){
   return (e1->get_type() == e2->get_type()) && (e1->get_type == "BYTE") ? "BYTE" : "INT";
@@ -93,4 +94,34 @@ Exp* emitRelop(Exp* e1, Value* op, Exp* e2){
   int cond_br = buffer.emit("br i1 " + tmp_reg + ", label @, label @");
 
   return new Exp("BOOL", "", makelist(bpItem(cond_br, FIRST)), makelist(bpItem(cond_br, SECOND)));
+}
+
+Exp* emitLoad(string id, string type){
+  int offset = st.get_offset(id);
+  if (offest < 0){
+      int reg_num = abs(id_offset) - 1;
+      reg exp_reg = "%"+to_string(reg_num)
+  } else{
+    reg ptr_reg = allocate_register();
+    reg exp_reg = allocate_register();
+    buffer.emit(ptr_reg + " = getelementptr [50 x i32] , [50 x i32]* " + function_sp + ", i32 0, i32 " + to_string(offset));
+    buffer.emit(exp_reg + " = load i32, i32* " + ptr_reg);
+  }
+
+  if (type == "BOOL"){
+    reg res_reg = newReg();
+    buffer.emit(res_reg + " = trunc i32 " + exp_reg + " to i1");
+    int cond_br = buffer.emit("br i1 " + res_reg + ", label @, label @");
+
+    return new Exp(type, res_reg, makelist(bpItem(cond_br, FIRST)), makelist(bpItem(cond_br, SECOND)));
+  }
+
+  return new Exp(type, exp_reg);
+}
+
+void emitStore(string id, string type, string val){
+  int offset = st.get_offset(id);
+  reg ptr_reg = allocate_register();
+  buffer.emit(ptr_reg + " = getelementptr [50 x i32] , [50 x i32]* " + function_sp + ", i32 0, i32 " + to_string(offset));
+  buffer.emit("store i32 " + val + ", i32* " + ptr_reg);
 }
