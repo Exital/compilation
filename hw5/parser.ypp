@@ -419,11 +419,6 @@ N: { int branch = buffer.emit("br label @\n");
 $$ = new N(makelist(bpItem(branch, FIRST))); };
 %%
 
-bpList emitGoTo(){
-    int index = CodeBuffer::instance().emit("br label @\n");
-    bpList next_list = CodeBuffer::instance().makelist(bpItem(index, FIRST));
-    return next_list;
-}
 
 int main (){
     yyparse();
