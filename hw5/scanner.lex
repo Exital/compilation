@@ -3,6 +3,7 @@
 #define YYSTYPE Node*
 #include "tokenTypes.hpp"
 #include "parser.tab.hpp"
+#include "code_gen.hpp"
 %}
 
 %option yylineno
@@ -37,15 +38,15 @@ continue                            return CONTINUE;
 "{"                                 return LBRACE;
 "}"                                 return RBRACE;
 =                                   return ASSIGN;
-(>|<|<=|>=)                         return RELOP;
-(==|!=)								              return EQUALITY;
-(\+|\-)				                      return ADDSUB;
-(\*|\/)								              return MULDIV;
+(>|<|<=|>=)                         {yylval = new Value(yytext); return RELOP;}
+(==|!=)								              {yylval = new Value(yytext); return EQUALITY;}
+(\+|\-)				                      {yylval = new Value(yytext); return ADDSUB;}
+(\*|\/)								              {yylval = new Value(yytext); return MULDIV;}
 [a-zA-Z][a-zA-Z0-9]*      	        {yylval = new Value(yytext); return ID;}
 [0]|[1-9][0-9]*                     {yylval = new Value(yytext); return NUM;}
-\"([^\n\r\"\\]|\\[rnt"\\])+\"       return STRING;
+\"([^\n\r\"\\]|\\[rnt"\\])+\"       {yylval = new Value(yytext); return STRING;}
 \/\/[^\r\n]*(\r|\n|\r\n)?           ;
-.									                  {output::errorLex(yylineno); exit(0);};
+.									                  {output::errorLex(yylineno); exit(1);};
 
 
 %%
