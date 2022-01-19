@@ -36,5 +36,7 @@ Exp* emitRelop(Exp* e1, Value* op, Exp* e2);
 Exp* emitLoad(string id, string type);
 void emitStore(string id, string type, string val);
 
+void bool_handler(Exp* e1);
+
 
 #endif //CODE_GEN_H

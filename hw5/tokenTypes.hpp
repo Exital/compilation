@@ -32,13 +32,12 @@ public:
 
 class Statement : public Node
 {
-    string type;
-    string id;
+    bpList break_list;
+    bpList continue_list;
 public:
-    string get_type() {return type;}
-    string get_id() {return id;}
-    Statement(const string &type, const string &id) : type(type), id(id) {}
-    Statement(Value *pType, Value *pId) : type(pType->get_str()), id(pId->get_str()) {}
+    bpList get_break_list() {return break_list;}
+    bpList get_continue_list() {return continue_list;}
+    explicit Statement(const bpList &next_list = bpList(), const bpList &continue_list = bpList()) : break_list(next_list) , continue_list(continue_list) {}
 };
 
 class FormalDecl : public Node
@@ -57,11 +56,12 @@ class Exp : public Node
 {
     string type;
     reg reg;
-    bpList true_list;
-    bpList false_list;
     string next_label;
 public:
+    bpList true_list;
+    bpList false_list;
     string get_type() {return type;}
+    void set_reg(reg new_reg) { reg = new_reg;}
     bool is_numeric() {return (type == "INT") || (type == "BYTE");}
     bool is_logic() {return type == "BOOL";}
     reg get_reg(){return reg;}
@@ -71,7 +71,7 @@ public:
 class M : public Node
 {
 public:
-    string next_inst;
+    string next;
     explicit M(const string& val) : next_inst(val) {}
 };
 

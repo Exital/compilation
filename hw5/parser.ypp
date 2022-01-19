@@ -177,12 +177,16 @@ FormalDecl : TypeAnnotation Type ID {
    delete($1);
    delete($2); delete($3); };
 
-// TODO: stopped here
+
 Statements : Statement  {$$ = $1;}
-           |Statements Statement   {};
+           |Statements M Statement   {
+           $$ = new Statement(merge(((Statement*)$1)->break_list, ((Statement*)$3)->break_list), merge(((Statement*)$1)->continue_list, ((Statement*)$3)->continue_list));
+           delete($1); delete($2); delete($3);
+           };
 
-Statement : LBRACE NewScope Statements RBRACE DeleteScope;
+Statement : LBRACE NewScope Statements RBRACE DeleteScope { $$ = $3; };
 
+// TODO: check what to do with const
 Statement : TypeAnnotation Type ID SC {
     string name = ((Value*)$3)->get_str();
     string type = ((Value*)$2)->get_str();
@@ -197,6 +201,8 @@ Statement : TypeAnnotation Type ID SC {
         errorDef(yylineno, name);
         exit(1);
     }
+    emitStore(name, type, "0");
+    $$ = new Statement();
  };
 
 Statement : TypeAnnotation Type ID ASSIGN Exp SC {
@@ -214,7 +220,11 @@ Statement : TypeAnnotation Type ID ASSIGN Exp SC {
    } else {
        errorMismatch(yylineno);
        exit(1);
-   }};
+   }
+   if (type == "BOOL") bool_handler((Exp*)$5);
+   emitStore(name, type, ((Exp*)$5)->id);
+   $$ = new Statement();
+   };
 
 Statement : ID ASSIGN Exp SC    {
    string id = ((Value*)$1)->get_str();
@@ -234,16 +244,21 @@ Statement : ID ASSIGN Exp SC    {
       errorConstMismatch(yylineno);
       exit(1);
    }
+   if (type == "BOOL") bool_handler((Exp*)$3);
+   emitStore(name, type, ((Exp*)$3)->id);
+   $$ = new Statement();
 };
 
 
-Statement : Call SC {$$ = $1;};
+Statement : Call SC {$$ = new Statement();};
 
 Statement : RETURN SC   {
     if(st.last_func_return_type != "VOID"){
         errorMismatch(yylineno);
         exit(1);
     }
+    buffer.emit("ret void");
+    $$ = new Statement();
 };
 
 Statement : RETURN Exp SC   {
@@ -253,21 +268,58 @@ Statement : RETURN Exp SC   {
         errorMismatch(yylineno);
         exit(1);
     }
+    if (exp_type == "BOOL") bool_handler((Exp*)$2);
+    $$ = new Statement();
+    buffer.emit("ret i32 " + (Exp*)$2->get_reg());
 };
 
-Statement : IF CheckBoolScope NewScope Statement DeleteScope %prec IF   { } ;
-Statement : IF CheckBoolScope NewScope Statement DeleteScope ELSE NewScope Statement DeleteScope { };
-Statement : WHILE {in_loop++;} CheckBoolScope NewScope Statement DeleteScope {in_loop--; } ;
-Statement : BREAK {
+Statement : IF CheckBoolScope M NewScope Statement DeleteScope %prec IF   {
+  buffer.bpatch(((Exp*)$2)->true_list, ((M*)$3)->next);
+  int branch = buffer.emit("br label @\n");
+  bpList next_list = makelist(bpItem(branch, FIRST));
+  buffer.bpatch(merge(next_list, ((Exp*)$2)->false_list), buffer.genLabel());
+  $$ = new Statement((Statement*)$5)->continue_list, (Statement*)$5)->break_list);
+  delete($2); delete($3); delete($5);
+  } ;
+Statement : IF CheckBoolScope M NewScope Statement DeleteScope ELSE N M NewScope Statement DeleteScope M {
+  buffer.bpatch(((Exp*)$2)->true_list, ((M*)$3)->next);
+  buffer.bpatch(((Exp*)$2)->false_list, ((M*)$9)->next);
+  buffer.bpatch(((N*)$8)->next_list, ((M*)$13)->next);
+  bpList cont = merge(((Statement*)$5)->continue_list, ((Statement*)$11)->continue_list);
+  bpList break = merge(((Statement*)$5)->break_list, ((Statement*)$11)->break_list);
+  delete($2); delete($3); delete($5); delete($8); delete($9); delete($11); delete($13);
+  $$ = new Statement(cont, break);
+};
+Statement : WHILE {in_loop++;} M CheckBoolScope NewScope M Statement N M DeleteScope {
+  in_loop--;
+  bpatch(((Exp*)$4)->false_list, ((M*)$9)->next);
+  buffer.bpatch(((Exp*)$4)->true_list, ((M*)$6)->next);
+  buffer.bpatch(((N*)$8)->next_list, ((M*)$3)->next); // loop
+  buffer.bpatch(((Statement*)$7)->continue_list, ((M*)$3)->next);
+  buffer.bpatch(((Statement*)$7)->break_list, ((M*)$9)->next);
+  delete($3); delete($4); delete($6); delete($7); delete($8); delete($9);
+  $$ = new Statement();
+ } ;
+
+Statement : BREAK N SC{
     if(!in_loop){
         errorUnexpectedBreak(yylineno);
-        exit(1); }} SC  ;
+        exit(1);
+     }
+    $$ = new Statement(((N*)$2)->next_list, bpList());
+    delete($2);
+    } ;
 
-Statement : CONTINUE {
+Statement : CONTINUE N SC{
     if(!in_loop){
         errorUnexpectedContinue(yylineno);
-        exit(1); }} SC  ;
+        exit(1);
+     }
+     $$ = new Statement(bpList(), ((N*)$2)->next_list);
+     delete($2);
+    };
 
+// TODO: we have stopped here
 Call : ID LPAREN ExpList RPAREN {
     string func_id = ((Value*)$1)->get_str();
     delete($1);
@@ -404,13 +456,14 @@ Exp : LPAREN Type RPAREN Exp{
   $$ = new Exp(to_type);
 };
 
+//TODO: check if need to be replaced to back.
 CheckBoolScope : LPAREN Exp {
     if(!((Exp*)$2)->is_logic()){
         delete($2);
         errorMismatch(yylineno);
         exit(1);
     }
-    delete($2);
+    $$ = $2;
 } RPAREN ;
 
 NewScope: {st.new_scope();};

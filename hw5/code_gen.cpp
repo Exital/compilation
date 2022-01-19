@@ -126,3 +126,24 @@ void emitStore(string id, string type, string val){
   buffer.emit(ptr_reg + " = getelementptr [50 x i32] , [50 x i32]* " + function_sp + ", i32 0, i32 " + to_string(offset));
   buffer.emit("store i32 " + val + ", i32* " + ptr_reg);
 }
+
+void bool_handler(Exp* e1){
+  string true_label = buffer.genLabel();
+  buffer.bpatch(e1->true_list, true_label);
+
+  int branch = buffer.emit("br label @\n");
+  bpList phi_true = makelist(bpItem(branch, FIRST));
+
+  string false_label = buffer.genLabel();
+  buffer.bpatch(e1->false_list, false_label);
+
+  branch = buffer.emit("br label @\n");
+  bpList phi_false = makelist(bpItem(branch, FIRST));
+
+  string phi_label = buffer.genLabel();
+  reg new_reg = allocate_register();
+  buffer.emit(phi_reg + "= phi i32 [ 1, %" + true_label + "], [ 0, %" + false_label + "]");
+  buffer.bpatch(merge(phi_true, phi_false), phi_label);
+
+  e1->set_reg(new_reg);
+}
