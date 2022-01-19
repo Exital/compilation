@@ -2,7 +2,7 @@
 #define CODE_GEN_H
 
 #include "tokenTypes.hpp"
-#include "symbolTable.hpp"
+#include "SymbolTable.hpp"
 #include "bp.hpp"
 typedef string reg
 extern SymbolTable st;
