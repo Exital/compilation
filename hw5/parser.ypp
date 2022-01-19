@@ -16,37 +16,22 @@ extern char* yytext;
 SymbolTable st;
 int in_loop = 0;
 
-Exp* handle_binop(Exp* exp1, Exp* exp2){
+void handle_binop(Exp* exp1, Exp* exp2){
     if ((!exp1->is_numeric()) || (!exp2->is_numeric()))
     {
         errorMismatch(yylineno);
         delete(exp1); delete(exp2);
         exit(1);
     }
-    Exp* result;
-    if (exp1->get_type() == "BYTE" && (exp2)->get_type() == "BYTE")
-    {
-        result = new Exp("BYTE");
-    }
-    else
-    {
-        result = new Exp("INT");
-    }
-
-    delete(exp1); delete(exp2);
-    return result;
 }
 
-Exp* handle_relop(Exp* exp1, Exp* exp2){
+void handle_relop(Exp* exp1, Exp* exp2){
     if ((!exp1->is_numeric()) || (!exp2->is_numeric()))
     {
         errorMismatch(yylineno);
         delete(exp1); delete(exp2);
         exit(1);
     }
-
-    delete(exp1); delete(exp2);
-    return new Exp("BOOL");
 }
 
 bool can_assign_types(string type1, string type2){
@@ -54,15 +39,13 @@ bool can_assign_types(string type1, string type2){
     return (type1 == type2) || (type1 == "INT" && type2 == "BYTE");
 }
 
-Exp* handle_logic(Exp* exp1, Exp* exp2){
+void handle_logic(Exp* exp1, Exp* exp2){
     if((!exp1->is_logic()) || (!exp2->is_logic()))
     {
         errorMismatch(yylineno);
         delete(exp1); delete(exp2);
         exit(1);
     }
-    delete(exp1); delete(exp2);
-    return new Exp("BOOL");
 }
 
 bool int_or_byte(string type){return type == "INT" || type == "BYTE";}
@@ -319,13 +302,15 @@ Statement : CONTINUE N SC{
      delete($2);
     };
 
-// TODO: we have stopped here
+
 Call : ID LPAREN ExpList RPAREN {
     string func_id = ((Value*)$1)->get_str();
     delete($1);
     vector<string> param_types;
+    vector<reg> param_regs;
     while($3){
         param_types.push_back(((Exp*)$3)->get_type());
+        param_regs.push_back(((Exp*)$3)->get_reg());
         Exp* to_delete = ((Exp*)$3);
         $3 = ((Exp*)$3)->next;
         delete to_delete;
@@ -346,7 +331,8 @@ Call : ID LPAREN ExpList RPAREN {
             exit(1);
         }
     }
-    $$ = new Statement(func->get_type(), func_id);
+    // emit call function
+    $$ = emitCallFunc(func->get_type(), func_id, param_types, param_regs);
 } ;
 
 Call : ID LPAREN RPAREN {
@@ -362,11 +348,20 @@ Call : ID LPAREN RPAREN {
         errorPrototypeMismatch(yylineno, func_id, args_types);
         exit(1);
     }
-    $$ = new Statement(func->get_type(), func_id);
+    $$ = emitCallFunc(func->get_type(), func_id);
 } ;
 
-ExpList : Exp   {$$ = $1;};
-ExpList : Exp COMMA ExpList {$$ = $1; $$->next = $3;};
+ExpList : Exp   {
+  string type = ((Exp*)$1)->get_type();
+  if (type == "BOOL") bool_handler();
+  $$ = $1;
+};
+ExpList : Exp {
+  string type = ((Exp*)$1)->get_type();
+  if (type == "BOOL") bool_handler();
+  } COMMA ExpList {$$ = $1; $$->next = $4;};
+
+
 Type : INT  { $$ = new Value("INT"); };
 Type : BYTE { $$ = new Value("BYTE"); };
 Type : BOOL { $$ = new Value("BOOL"); };
@@ -377,11 +372,15 @@ TypeAnnotation : CONST                                                          
 Exp : LPAREN Exp RPAREN { $$ = $2; };
 
 Exp : Exp ADDSUB Exp {
-    $$ = handle_binop((Exp*)$1, (Exp*)$3);
+    handle_binop((Exp*)$1, (Exp*)$3);
+    $$ = emitAddSub((Exp*)$1, (Value*)$2, (Exp*)$3);
+    delete($1); delete($2); delete($3);
  };
 
 Exp : Exp MULDIV Exp {
-    $$ = handle_binop((Exp*)$1, (Exp*)$3);
+    handle_binop((Exp*)$1, (Exp*)$3);
+    $$ = emitMulDiv((Exp*)$1, (Value*)$2, (Exp*)$3);
+    delete($1); delete($2); delete($3);
 };
 
 Exp : ID  {
@@ -392,15 +391,15 @@ Exp : ID  {
         errorUndef(yylineno, id_name);
         exit(1);
     }
-    Exp* new_exp = new Exp(type);
-    $$ = new_exp;} ;
+    $$ = emitLoadID(id_name, type);
+    };
 
-Exp : Call  {
-    string call_type = ((Statement*)$1)->get_type();
-    delete($1);
-    $$ = new Exp(call_type); };
+Exp : Call  { $$ = $1 };
 
-Exp : NUM {delete($1); $$ = new Exp("INT"); };
+Exp : NUM {
+  $$ = new Exp("INT", to_string(((Value*)$1)->get_num())); };
+  delete($1);
+ };
 
 Exp : NUM B {
     int value = ((Value*)$1)->get_num();
@@ -409,11 +408,27 @@ Exp : NUM B {
         errorByteTooLarge(yylineno, to_string(value));
         exit(1);
     }
-    $$ = new Exp("BYTE"); };
+    $$ = new Exp("BYTE", to_string(value)); };
 
-Exp : STRING { $$ = new Exp("STRING"); };
-Exp : TRUE { $$ = new Exp("BOOL"); };
-Exp : FALSE { $$ = new Exp("BOOL"); };
+Exp : STRING {
+  reg new_global_reg = allocate_global_register();
+  int length = ((Value*)$1)->get_str().length;
+  string length_str = to_string(length - 1);
+  buffer.emitGlobal("@" + new_global_reg + " = internal constant [" + length_str + " x i8] c\"" + ((Value*)$1)->get_str().substr(1,length-2) + "\\00\"");
+  reg new_reg = allocate_register();
+  buffer.emit(new_reg + " = getelementptr [" + length_str + " x i8], [" + length_str + " x i8]* " + new_global_reg + ", i32 0, i32 0");
+  $$ = new Exp("STRING", new_reg);
+};
+Exp : TRUE {
+  int branch = buffer.emit("br label @");
+  $$ = new Exp("BOOL", "1", makelist(bpItem(branch, FIRST)));
+};
+Exp : FALSE {
+  int branch = buffer.emit("br label @");
+  Exp* new_exp = new Exp("BOOL", "0");
+  new_exp->false_list = makelist(bpItem(branch, FIRST));
+  $$ = new_exp;
+};
 
 Exp : NOT Exp {
         if (!((Exp*)$2)->is_logic())
@@ -422,29 +437,41 @@ Exp : NOT Exp {
             delete($2);
             exit(1);
         }
-        $$ = new Exp("BOOL");
-        delete($2);
+        bpList tmp_false_list = ((Exp*)$2)->false_list;
+        ((Exp*)$2)->false_list = ((Exp*)$2)->true_list;
+        ((Exp*)$2)->true_list = tmp_false_list;
+        $$ = $2;
      };
 
-Exp : Exp AND Exp {
-    $$ = handle_logic((Exp*)$1, (Exp*)$3);
-
+Exp : Exp AND M Exp {
+    handle_logic((Exp*)$1, (Exp*)$3);
+    buffer.bpatch(((Exp*)$1)->true_list, ((M*)$3)->next);
+    $$ = new Exp("BOOL", "", ((Exp*)$4)->true_list, merge(((Exp*)$1)->false_list, ((Exp*)$4)->false_list));
+    delete($1); delete($3); delete($4);
 };
 
-Exp : Exp OR Exp {
-    $$ = handle_logic((Exp*)$1, (Exp*)$3);
+Exp : Exp OR {if (((Exp*)$1)->get_type() == "BOOL") bool_handler((Exp*)$1); } M Exp {
+  handle_logic((Exp*)$1, (Exp*)$3);
+  buffer.bpatch(((Exp*)$1)->false_list, ((M*)$4)->next);
+  $$ = new Exp("BOOL", "", merge(((Exp*)$1)->true_list, ((Exp*)$5)->true_list), ((Exp*)$5)->false_list);
+  delete($1); delete($4); delete($5);
+}
 
-};
 
 Exp : Exp EQUALITY Exp {
-    $$ = handle_relop((Exp*)$1, (Exp*)$3);
+    handle_relop((Exp*)$1, (Exp*)$3);
+    $$ = emitRelop((Exp*)$1, (Value*)$2, (Exp*)$3);
+    delete($1); delete($2); delete($3);
  };
 
 
 Exp : Exp RELOP Exp  {
-    $$ = handle_relop((Exp*)$1, (Exp*)$3);
+    handle_relop((Exp*)$1, (Exp*)$3);
+    $$ = emitRelop((Exp*)$1, (Value*)$2, (Exp*)$3);
+    delete($1); delete($2); delete($3);
  };
 
+// TODO: think about casting logic.
 Exp : LPAREN Type RPAREN Exp{
   string to_type = ((Value*)$2)->get_str();
   string from_type = ((Exp*)$4)->get_type();
@@ -470,17 +497,21 @@ NewScope: {st.new_scope();};
 DeleteScope: {st.delete_scope();} ;
 M: N { string next_label = buffer.genLabel(); buffer.bpatch(((N*)$1)->next_list, next_label ); delete($1); $$ = new M(next_label); };
 N: { int branch = buffer.emit("br label @\n");
-$$ = new N(makelist(bpItem(branch, FIRST))); };
+$$ = new N(makelist(bpItem(branch, FIRST)));
+};
 %%
 
 
 int main (){
     yyparse();
+    initBuffer();
     if (!st.was_main_declared)
     {
         errorMainMissing();
         exit(1);
     }
+    buffer.printGlobalBuffer();
+    buffer.printCodeBuffer();
     st.delete_scope();
 }
 

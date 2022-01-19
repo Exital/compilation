@@ -147,3 +147,19 @@ void bool_handler(Exp* e1){
 
   e1->set_reg(new_reg);
 }
+
+Exp* emitCallFunc(string r_type, string func_id, const vector<string>& param_types, const vector<string>& param_regs){
+  if (func_id == "print"){
+    buffer.emit("call void @print(i8* " + param_regs[0] + ")");
+    return new Exp(r_type, func_id);
+  }
+  string return_type = (r_type == "VOID") ? "void" : "i32";
+  reg new_exp_id = (r_type != "VOID") ? allocate_register() : func_id;
+  string to_emit = (r_type != "VOID") ? (new_exp_id + " = ") : "";
+
+  to_emit += "call " + return_type + " @" + func_id + "(";
+  for(size_t i = 0; i < param_types.size(); i++) to_emit += (i == param_types.size()-1) ? "i32 " + param_regs[i] : "i32 " + param_regs[i] + ", ";
+  to_emit += ")";
+  buffer.emit(to_emit);
+  return new Exp(return_type, new_exp_id);
+}

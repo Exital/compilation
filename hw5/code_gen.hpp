@@ -38,5 +38,8 @@ void emitStore(string id, string type, string val);
 
 void bool_handler(Exp* e1);
 
+Exp* emitCallFunc(string r_type, string func_id, const vector<string>& param_types = vector<string>(), const vector<string>& param_regs=vector<string>());
+
+
 
 #endif //CODE_GEN_H
