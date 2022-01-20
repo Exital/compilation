@@ -100,10 +100,10 @@ Function* SymbolTable::get_function_by_id(string id){
 }
 
 void SymbolTable::delete_scope() {
-    endScope();
+    //endScope();
 
     for(auto& symbol : scopes.top()) {
-        symbol->print_symbol();
+        //symbol->print_symbol();
         declared_symbols.erase(symbol->get_id());
     }
 
