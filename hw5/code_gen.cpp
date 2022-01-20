@@ -70,14 +70,14 @@ void generate_check_div_by_zero_code(Exp* e2){
 }
 
 Exp* emitMulDiv(Exp* e1, Value* op, Exp* e2){
-  string op = (op->get_str() == "*") ? "mul" : "sdiv";
+  string op_cmd = (op->get_str() == "*") ? "mul" : "sdiv";
 
-  if (op == "sdiv") {
+  if (op_cmd == "sdiv") {
     generate_check_div_by_zero_code(e2);
   }
 
   reg res_reg = allocate_register();
-  buffer.emit(res_reg + " = " + op + " i32 " + e1->get_reg() + ", " + e2->get_reg());
+  buffer.emit(res_reg + " = " + op_cmd + " i32 " + e1->get_reg() + ", " + e2->get_reg());
 
   string res_type = get_return_type_of_binop(e1,e2);
   if (res_type == "BYTE"){
@@ -90,10 +90,10 @@ Exp* emitMulDiv(Exp* e1, Value* op, Exp* e2){
 }
 
 Exp* emitRelop(Exp* e1, Value* op, Exp* e2){
-  string op = llvm_relop_op[op->get_str()];
+  string op_cmd = llvm_relop_op[op->get_str()];
 
   reg tmp_reg = allocate_register();
-  buffer.emit(tmp_reg + " = icmp " + op + " i32 " + e1->get_reg() + ", " + e2->get_reg());
+  buffer.emit(tmp_reg + " = icmp " + op_cmd + " i32 " + e1->get_reg() + ", " + e2->get_reg());
   int cond_br = buffer.emit("br i1 " + tmp_reg + ", label @, label @");
 
   return new Exp("BOOL", "", buffer.makelist(bpItem(cond_br, FIRST)), buffer.makelist(bpItem(cond_br, SECOND)));

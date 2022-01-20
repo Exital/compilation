@@ -110,3 +110,7 @@ void SymbolTable::delete_scope() {
     scopes.pop();
     offsets.pop();
 }
+
+int SymbolTable::get_offset_by_id(string id){
+  return declared_symbols[id]->get_offset();
+}

@@ -59,6 +59,7 @@ public:
     string add_function_args_symbols(vector<string> arg_ids, vector<string> argTypes, vector<bool> arg_consts);
     string get_type_by_id(string id);
     bool get_const_by_id(string id);
+    int get_offset_by_id(string id);
     Function* get_function_by_id(string id);
     void delete_scope();
     ~SymbolTable() = default;
