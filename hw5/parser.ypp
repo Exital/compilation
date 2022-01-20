@@ -267,13 +267,9 @@ Statement : IF CheckBoolScope M NewScope Statement DeleteScope %prec IF   {
   delete($2); delete($3); delete($5);
   } ;
 Statement : IF CheckBoolScope M NewScope Statement DeleteScope ELSE N M NewScope Statement DeleteScope M {
-  cout << "firstbp" << endl;
   buffer.bpatch(((Exp*)$2)->true_list, ((M*)$3)->next);
-  cout << "secondbp" << endl;
   buffer.bpatch(((Exp*)$2)->false_list, ((M*)$9)->next);
-  cout << "thirdbp" << endl;
   buffer.bpatch(((N*)$8)->next_list, ((M*)$13)->next);
-  cout << "forthbp" << endl;
   bpList cont_l = buffer.merge(((Statement*)$5)->continue_list, ((Statement*)$11)->continue_list);
   bpList break_l = buffer.merge(((Statement*)$5)->break_list, ((Statement*)$11)->break_list);
   delete($2); delete($3); delete($5); delete($8); delete($9); delete($11); delete($13);
@@ -450,14 +446,14 @@ Exp : NOT Exp {
      };
 
 Exp : Exp AND M Exp {
-    handle_logic((Exp*)$1, (Exp*)$3);
+    handle_logic((Exp*)$1, (Exp*)$4);
     buffer.bpatch(((Exp*)$1)->true_list, ((M*)$3)->next);
     $$ = new Exp("BOOL", "", ((Exp*)$4)->true_list, buffer.merge(((Exp*)$1)->false_list, ((Exp*)$4)->false_list));
     delete($1); delete($3); delete($4);
 };
 
 Exp : Exp OR {if (((Exp*)$1)->get_type() == "BOOL") bool_handler((Exp*)$1); } M Exp {
-  handle_logic((Exp*)$1, (Exp*)$3);
+  handle_logic((Exp*)$1, (Exp*)$5);
   buffer.bpatch(((Exp*)$1)->false_list, ((M*)$4)->next);
   $$ = new Exp("BOOL", "", buffer.merge(((Exp*)$1)->true_list, ((Exp*)$5)->true_list), ((Exp*)$5)->false_list);
   delete($1); delete($4); delete($5);
@@ -489,7 +485,7 @@ Exp : LPAREN Type RPAREN Exp{
   $$ = new Exp(to_type, allocate_register());
 };
 
-//TODO: check if need to be replaced to back.
+
 CheckBoolScope : LPAREN Exp RPAREN{
     if(!((Exp*)$2)->is_logic()){
         delete($2);
@@ -511,7 +507,6 @@ $$ = new N(buffer.makelist(bpItem(branch, FIRST)));
 int main (){
     yyparse();
 
-    printf("%d", 42);
     initBuffer();
     if (!st.was_main_declared)
     {
