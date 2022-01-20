@@ -1,9 +1,11 @@
 #ifndef TOKENTYPES_H
 #define TOKENTYPES_H
 #include <string>
+using namespace std;
+
 typedef string reg
 
-using namespace std;
+
 class Node
 {
 public:
