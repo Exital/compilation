@@ -6,7 +6,7 @@ reg function_sp = "";
 CodeBuffer& buffer = CodeBuffer::instance();
 
 string get_return_type_of_binop(Exp* e1, Exp* e2){
-  return (e1->get_type() == e2->get_type()) && (e1->get_type == "BYTE") ? "BYTE" : "INT";
+  return (e1->get_type() == e2->get_type()) && (e1->get_type() == "BYTE") ? "BYTE" : "INT";
 }
 
 void initBuffer(){
@@ -17,7 +17,7 @@ void initBuffer(){
   declarations += "@div_by_zero_error = constant [" + std::to_string(errorMsg.length()+1) + " x i8] c\"" + errorMsg + "\\00\"";
   buffer.emitGlobal(declarations);
 
-  string specifiers = "@.str_specifier = internal constant [4 x i8] c\"%s\\0A\\00\"\n"
+  string specifiers = "@.str_specifier = internal constant [4 x i8] c\"%s\\0A\\00\"\n";
   specifiers += "@.int_specifier = internal constant [4 x i8] c\"%d\\0A\\00\"\n";
   buffer.emitGlobal(specifiers);
 
@@ -36,14 +36,14 @@ reg allocate_register(){ return "%t" + to_string(++register_count); }
 reg allocate_global_register(){ return "g" + to_string(++register_count); }
 
 Exp* emitAddSub(Exp* e1, Value* op, Exp* e2){
-  string op = (op->get_str() == "+") ? "add" : "sub";
+  string op_cmd = (op_cmd->get_str() == "+") ? "add" : "sub";
   CodeBuffer& buffer = CodeBuffer::instance();
   string result_reg = allocate_register();
-  buffer.emit(result_reg + " = " + op + " i32" + e1->get_reg() + ", " + e2->get_reg());
+  buffer.emit(result_reg + " = " + op_cmd + " i32" + e1->get_reg() + ", " + e2->get_reg());
 
   string result_type = get_return_type_of_binop(e1, e2);
   if (result_type == "BYTE"){
-      new_result_reg = allocate_register();
+      reg new_result_reg = allocate_register();
       buffer.emit(new_result_reg + " = and i32 255, " + result_reg);
       result_reg = new_result_reg;
   }
