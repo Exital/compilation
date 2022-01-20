@@ -6,13 +6,12 @@
 #include "code_gen.hpp"
 #define YYSTYPE Node*
 using namespace output;
-CodeBuffer& buffer = CodeBuffer::instance();
 
 int yyerror(const char * message);
 extern int yylineno;
 extern int yylex();
 extern char* yytext;
-
+extern CodeBuffer& buffer;
 SymbolTable st;
 int in_loop = 0;
 
