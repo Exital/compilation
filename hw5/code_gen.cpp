@@ -145,7 +145,7 @@ void bool_handler(Exp* e1){
 
   string phi_label = buffer.genLabel();
   reg new_reg = allocate_register();
-  buffer.emit(phi_reg + "= phi i32 [ 1, %" + true_label + "], [ 0, %" + false_label + "]");
+  buffer.emit(new_reg + "= phi i32 [ 1, %" + true_label + "], [ 0, %" + false_label + "]");
   buffer.bpatch(buffer.merge(phi_true, phi_false), phi_label);
 
   e1->set_reg(new_reg);
