@@ -418,7 +418,7 @@ Exp : STRING {
   string length_str = to_string(length - 1);
   buffer.emitGlobal("@" + new_global_reg + " = internal constant [" + length_str + " x i8] c\"" + ((Value*)$1)->get_str().substr(1,length-2) + "\\00\"");
   reg new_reg = allocate_register();
-  buffer.emit(new_reg + " = getelementptr [" + length_str + " x i8], [" + length_str + " x i8]* " + new_global_reg + ", i32 0, i32 0");
+  buffer.emit(new_reg + " = getelementptr [" + length_str + " x i8], [" + length_str + " x i8]* " + "@" + new_global_reg + ", i32 0, i32 0");
   $$ = new Exp("STRING", new_reg);
 };
 Exp : TRUE {
