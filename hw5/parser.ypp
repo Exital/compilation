@@ -479,7 +479,7 @@ Exp : LPAREN Type RPAREN Exp{
       errorMismatch(yylineno);
       exit(1);
   }
-  $$ = new Exp(to_type);
+  $$ = new Exp(to_type, allocate_register());
 };
 
 //TODO: check if need to be replaced to back.
@@ -503,6 +503,8 @@ $$ = new N(buffer.makelist(bpItem(branch, FIRST)));
 
 int main (){
     yyparse();
+
+    printf(%s, "here");
     initBuffer();
     if (!st.was_main_declared)
     {
