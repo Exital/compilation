@@ -58,17 +58,17 @@ public:
 class Exp : public Node
 {
     string type;
-    reg reg;
+    reg regi;
     string next_label;
 public:
     bpList true_list;
     bpList false_list;
     string get_type() {return type;}
-    void set_reg(reg new_reg) { reg = new_reg;}
+    void set_reg(reg new_reg) { regi = new_reg;}
     bool is_numeric() {return (type == "INT") || (type == "BYTE");}
     bool is_logic() {return type == "BOOL";}
     reg get_reg(){return reg;}
-    Exp(const string &type, const reg &reg = "", const bpList &true_list = bpList(), const bpList &false_list = bpList(), string next_label = "") : type(type), reg(reg), true_list(true_list), false_list(false_list), next_label(next_label);
+    Exp(const string &type, const reg &reg = "", const bpList &true_list = bpList(), const bpList &false_list = bpList(), string next_label = "") : type(type), regi(reg), true_list(true_list), false_list(false_list), next_label(next_label);
 };
 
 class M : public Node
