@@ -74,7 +74,7 @@ void generate_check_div_by_zero_code(Exp* e2){
 
   bpList is_zero =  buffer.makelist(bpItem(check_zero_br, FIRST));
   bpList not_zero = buffer.merge(buffer.makelist(bpItem(check_zero_br, SECOND)), buffer.makelist(bpItem(cont_br, FIRST)));
-
+  printf("%d", 0);
   buffer.bpatch(is_zero, error_label);
   buffer.bpatch(not_zero, cont_label);
 }
