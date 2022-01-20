@@ -141,7 +141,8 @@ FuncDecl : RetType ID LPAREN Formals RPAREN {
             //emit function finish
             function_sp = "";
             string return_type = ((Value*)$1)->get_str();
-            buffer.emit("ret " + (return_type == "VOID") ? "void" : "i32 0");
+            string llvm_return = (return_type == "VOID") ? "void" : "i32 0";
+            buffer.emit("ret " + llvm_return);
             buffer.emit("}");
             delete($1);
            };
