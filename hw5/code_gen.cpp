@@ -77,6 +77,7 @@ void generate_check_div_by_zero_code(Exp* e2){
   printf("%d", 0);
   buffer.bpatch(is_zero, error_label);
   buffer.bpatch(not_zero, cont_label);
+  printf("%d",404);
 }
 
 Exp* emitMulDiv(Exp* e1, Value* op, Exp* e2){
