@@ -101,18 +101,19 @@ Exp* emitRelop(Exp* e1, Value* op, Exp* e2){
 
 Exp* emitLoad(string id, string type){
   int id_offset = st.get_offset_by_id(id);
+  reg exp_reg = "";
   if (id_offset < 0){
       int reg_num = abs(id_offset) - 1;
-      reg exp_reg = "%"+to_string(reg_num)
+      exp_reg = "%"+to_string(reg_num);
   } else{
     reg ptr_reg = allocate_register();
-    reg exp_reg = allocate_register();
-    buffer.emit(ptr_reg + " = getelementptr [50 x i32] , [50 x i32]* " + function_sp + ", i32 0, i32 " + to_string(offset));
+    exp_reg = allocate_register();
+    buffer.emit(ptr_reg + " = getelementptr [50 x i32] , [50 x i32]* " + function_sp + ", i32 0, i32 " + to_string(id_offset));
     buffer.emit(exp_reg + " = load i32, i32* " + ptr_reg);
   }
 
   if (type == "BOOL"){
-    reg res_reg = newReg();
+    reg res_reg = allocate_register();
     buffer.emit(res_reg + " = trunc i32 " + exp_reg + " to i1");
     int cond_br = buffer.emit("br i1 " + res_reg + ", label @, label @");
 
