@@ -100,7 +100,7 @@ Exp* emitRelop(Exp* e1, Value* op, Exp* e2){
 }
 
 Exp* emitLoad(string id, string type){
-  int offset = st.get_offset(id);
+  int offset = st.get_offset_by_id(id);
   if (offest < 0){
       int reg_num = abs(id_offset) - 1;
       reg exp_reg = "%"+to_string(reg_num)
