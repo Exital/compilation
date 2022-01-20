@@ -391,10 +391,10 @@ Exp : ID  {
         errorUndef(yylineno, id_name);
         exit(1);
     }
-    $$ = emitLoadID(id_name, type);
+    $$ = emitLoad(id_name, type);
     };
 
-Exp : Call  { $$ = $1 };
+Exp : Call  { $$ = $1; };
 
 Exp : NUM {
   $$ = new Exp("INT", to_string(((Value*)$1)->get_num()));
@@ -421,12 +421,12 @@ Exp : STRING {
 };
 Exp : TRUE {
   int branch = buffer.emit("br label @");
-  $$ = new Exp("BOOL", "1", makelist(bpItem(branch, FIRST)));
+  $$ = new Exp("BOOL", "1", buffer.makelist(bpItem(branch, FIRST)));
 };
 Exp : FALSE {
   int branch = buffer.emit("br label @");
   Exp* new_exp = new Exp("BOOL", "0");
-  new_exp->false_list = makelist(bpItem(branch, FIRST));
+  new_exp->false_list = buffer.makelist(bpItem(branch, FIRST));
   $$ = new_exp;
 };
 
@@ -497,7 +497,7 @@ NewScope: {st.new_scope();};
 DeleteScope: {st.delete_scope();} ;
 M: N { string next_label = buffer.genLabel(); buffer.bpatch(((N*)$1)->next_list, next_label ); delete($1); $$ = new M(next_label); };
 N: { int branch = buffer.emit("br label @\n");
-$$ = new N(makelist(bpItem(branch, FIRST)));
+$$ = new N(buffer.makelist(bpItem(branch, FIRST)));
 };
 %%
 
