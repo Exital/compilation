@@ -100,8 +100,8 @@ Exp* emitRelop(Exp* e1, Value* op, Exp* e2){
 }
 
 Exp* emitLoad(string id, string type){
-  int offset = st.get_offset_by_id(id);
-  if (offest < 0){
+  int id_offset = st.get_offset_by_id(id);
+  if (id_offset < 0){
       int reg_num = abs(id_offset) - 1;
       reg exp_reg = "%"+to_string(reg_num)
   } else{
@@ -123,9 +123,9 @@ Exp* emitLoad(string id, string type){
 }
 
 void emitStore(string id, string type, string val){
-  int offset = st.get_offset(id);
+  int id_offset = st.get_offset_by_id(id);
   reg ptr_reg = allocate_register();
-  buffer.emit(ptr_reg + " = getelementptr [50 x i32] , [50 x i32]* " + function_sp + ", i32 0, i32 " + to_string(offset));
+  buffer.emit(ptr_reg + " = getelementptr [50 x i32] , [50 x i32]* " + function_sp + ", i32 0, i32 " + to_string(id_offset));
   buffer.emit("store i32 " + val + ", i32* " + ptr_reg);
 }
 
