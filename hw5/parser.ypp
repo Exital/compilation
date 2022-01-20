@@ -504,7 +504,7 @@ $$ = new N(buffer.makelist(bpItem(branch, FIRST)));
 int main (){
     yyparse();
 
-    printf(%s, "here");
+    printf("%d", 1);
     initBuffer();
     if (!st.was_main_declared)
     {
