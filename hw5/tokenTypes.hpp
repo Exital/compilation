@@ -3,7 +3,7 @@
 #include <string>
 using namespace std;
 
-typedef string reg
+typedef string reg;
 
 
 class Node
