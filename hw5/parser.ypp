@@ -412,7 +412,7 @@ Exp : NUM B {
 
 Exp : STRING {
   reg new_global_reg = allocate_global_register();
-  int length = ((Value*)$1)->get_str().length;
+  int length = ((Value*)$1)->get_str().length();
   string length_str = to_string(length - 1);
   buffer.emitGlobal("@" + new_global_reg + " = internal constant [" + length_str + " x i8] c\"" + ((Value*)$1)->get_str().substr(1,length-2) + "\\00\"");
   reg new_reg = allocate_register();
