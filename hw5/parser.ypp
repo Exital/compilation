@@ -14,6 +14,7 @@ extern int yylineno;
 extern int yylex();
 extern char* yytext;
 extern CodeBuffer& buffer;
+extern function_sp;
 SymbolTable st;
 int in_loop = 0;
 
@@ -131,13 +132,14 @@ FuncDecl : RetType ID LPAREN Formals RPAREN {
       decl += (i == arg_types.size()-1) ? "i32" : "i32, ";
     }
     decl += ") {\n";
-    reg function_sp = allocate_register();
+    function_sp = allocate_register();
     decl += (function_sp + " = alloca [50 x i32]");
     buffer.emit(decl);
 }
            LBRACE Statements RBRACE {
             st.delete_scope();
             //emit function finish
+            function_sp = "";
             string return_type = ((Value*)$1)->get_str();
             buffer.emit("ret " + (return_type == "VOID") ? "void" : "i32 0");
             buffer.emit("}");
