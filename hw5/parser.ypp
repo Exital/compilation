@@ -100,7 +100,7 @@ Funcs : FuncDecl Funcs                                                     {};
 FuncDecl : RetType ID LPAREN Formals RPAREN {
     string func_name = ((Value*)$2)->get_str();
     string ret_type = ((Value*)$1)->get_str();
-    delete($1); delete($2);
+    delete($2);
     vector<string> arg_types;
     vector<string> arg_names;
     vector<bool> arg_consts;
@@ -138,9 +138,10 @@ FuncDecl : RetType ID LPAREN Formals RPAREN {
            LBRACE Statements RBRACE {
             st.delete_scope();
             //emit function finish
-            string ret_type = ((Value*)$1)->get_str();
-            buffer.emit("ret " + (ret_type == "VOID") ? "void" : "i32 0");
+            string return_type = ((Value*)$1)->get_str();
+            buffer.emit("ret " + (return_type == "VOID") ? "void" : "i32 0");
             buffer.emit("}");
+            delete($1);
            };
 
 RetType : Type {$$ = $1;};
