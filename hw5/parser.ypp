@@ -122,6 +122,7 @@ FuncDecl : RetType ID LPAREN Formals RPAREN {
         errorDef(yylineno, add_args_res);
         exit(1);
     }
+    printf("%d", 1);
     //emit delcaration
     string llvm_type = (ret_type != "VOID") ? "i32" : "void";
     string decl = "define " + llvm_type + " @" + func_name + "(";
@@ -504,7 +505,7 @@ $$ = new N(buffer.makelist(bpItem(branch, FIRST)));
 int main (){
     yyparse();
 
-    printf("%d", 1);
+    printf("%d", 42);
     initBuffer();
     if (!st.was_main_declared)
     {
