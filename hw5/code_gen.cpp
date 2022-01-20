@@ -5,6 +5,16 @@ reg function_sp = "";
 
 CodeBuffer& buffer = CodeBuffer::instance();
 
+unordered_map<string, string> llvm_relop_op =
+        {
+            {"==", "eq"},
+            {"!=", "ne"},
+            {"<", "slt"},
+            {">", "sgt"},
+            {"<=", "sle"},
+            {">=", "sge"},
+        };
+
 string get_return_type_of_binop(Exp* e1, Exp* e2){
   return (e1->get_type() == e2->get_type()) && (e1->get_type() == "BYTE") ? "BYTE" : "INT";
 }

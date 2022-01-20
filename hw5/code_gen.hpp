@@ -7,15 +7,6 @@
 typedef string reg;
 extern SymbolTable st;
 
-unordered_map<string, string> llvm_relop_op =
-        {
-            {"==", "eq"},
-            {"!=", "ne"},
-            {"<", "slt"},
-            {">", "sgt"},
-            {"<=", "sle"},
-            {">=", "sge"},
-        };
 
 string get_return_type_of_binop(Exp* e1, Exp* e2);
 
