@@ -163,7 +163,7 @@ FormalDecl : TypeAnnotation Type ID {
 
 Statements : Statement  {$$ = $1;}
            |Statements M Statement   {
-           $$ = new Statement(merge(((Statement*)$1)->break_list, ((Statement*)$3)->break_list), merge(((Statement*)$1)->continue_list, ((Statement*)$3)->continue_list));
+           $$ = new Statement(buffer.merge(((Statement*)$1)->break_list, ((Statement*)$3)->break_list), buffer.merge(((Statement*)$1)->continue_list, ((Statement*)$3)->continue_list));
            delete($1); delete($2); delete($3);
            };
 
@@ -260,7 +260,7 @@ Statement : IF CheckBoolScope M NewScope Statement DeleteScope %prec IF   {
   buffer.bpatch(((Exp*)$2)->true_list, ((M*)$3)->next);
   int branch = buffer.emit("br label @\n");
   bpList next_list = makelist(bpItem(branch, FIRST));
-  buffer.bpatch(merge(next_list, ((Exp*)$2)->false_list), buffer.genLabel());
+  buffer.bpatch(buffer.merge(next_list, ((Exp*)$2)->false_list), buffer.genLabel());
   $$ = new Statement((Statement*)$5)->continue_list, (Statement*)$5)->break_list);
   delete($2); delete($3); delete($5);
   } ;
@@ -268,8 +268,8 @@ Statement : IF CheckBoolScope M NewScope Statement DeleteScope ELSE N M NewScope
   buffer.bpatch(((Exp*)$2)->true_list, ((M*)$3)->next);
   buffer.bpatch(((Exp*)$2)->false_list, ((M*)$9)->next);
   buffer.bpatch(((N*)$8)->next_list, ((M*)$13)->next);
-  bpList cont = merge(((Statement*)$5)->continue_list, ((Statement*)$11)->continue_list);
-  bpList break = merge(((Statement*)$5)->break_list, ((Statement*)$11)->break_list);
+  bpList cont = buffer.merge(((Statement*)$5)->continue_list, ((Statement*)$11)->continue_list);
+  bpList break = buffer.merge(((Statement*)$5)->break_list, ((Statement*)$11)->break_list);
   delete($2); delete($3); delete($5); delete($8); delete($9); delete($11); delete($13);
   $$ = new Statement(cont, break);
 };
@@ -446,14 +446,14 @@ Exp : NOT Exp {
 Exp : Exp AND M Exp {
     handle_logic((Exp*)$1, (Exp*)$3);
     buffer.bpatch(((Exp*)$1)->true_list, ((M*)$3)->next);
-    $$ = new Exp("BOOL", "", ((Exp*)$4)->true_list, merge(((Exp*)$1)->false_list, ((Exp*)$4)->false_list));
+    $$ = new Exp("BOOL", "", ((Exp*)$4)->true_list, buffer.merge(((Exp*)$1)->false_list, ((Exp*)$4)->false_list));
     delete($1); delete($3); delete($4);
 };
 
 Exp : Exp OR {if (((Exp*)$1)->get_type() == "BOOL") bool_handler((Exp*)$1); } M Exp {
   handle_logic((Exp*)$1, (Exp*)$3);
   buffer.bpatch(((Exp*)$1)->false_list, ((M*)$4)->next);
-  $$ = new Exp("BOOL", "", merge(((Exp*)$1)->true_list, ((Exp*)$5)->true_list), ((Exp*)$5)->false_list);
+  $$ = new Exp("BOOL", "", buffer.merge(((Exp*)$1)->true_list, ((Exp*)$5)->true_list), ((Exp*)$5)->false_list);
   delete($1); delete($4); delete($5);
 }
 
