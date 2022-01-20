@@ -228,7 +228,7 @@ Statement : ID ASSIGN Exp SC    {
       exit(1);
    }
    if (type == "BOOL") bool_handler((Exp*)$3);
-   emitStore(name, type, ((Exp*)$3)->id);
+   emitStore(name, type, ((Exp*)$3)->get_reg());
    $$ = new Statement();
 };
 
