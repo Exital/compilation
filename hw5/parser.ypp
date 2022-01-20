@@ -489,14 +489,14 @@ Exp : LPAREN Type RPAREN Exp{
 };
 
 //TODO: check if need to be replaced to back.
-CheckBoolScope : LPAREN Exp {
+CheckBoolScope : LPAREN Exp RPAREN{
     if(!((Exp*)$2)->is_logic()){
         delete($2);
         errorMismatch(yylineno);
         exit(1);
     }
     $$ = $2;
-} RPAREN ;
+}  ;
 
 NewScope: {st.new_scope();};
 DeleteScope: {st.delete_scope();} ;
