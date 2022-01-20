@@ -228,7 +228,7 @@ Statement : ID ASSIGN Exp SC    {
       exit(1);
    }
    if (type == "BOOL") bool_handler((Exp*)$3);
-   emitStore(name, type, ((Exp*)$3)->get_reg());
+   emitStore(id, type, ((Exp*)$3)->get_reg());
    $$ = new Statement();
 };
 
@@ -253,15 +253,15 @@ Statement : RETURN Exp SC   {
     }
     if (exp_type == "BOOL") bool_handler((Exp*)$2);
     $$ = new Statement();
-    buffer.emit("ret i32 " + (Exp*)$2->get_reg());
+    buffer.emit("ret i32 " + ((Exp*)$2)->get_reg());
 };
 
 Statement : IF CheckBoolScope M NewScope Statement DeleteScope %prec IF   {
   buffer.bpatch(((Exp*)$2)->true_list, ((M*)$3)->next);
   int branch = buffer.emit("br label @\n");
-  bpList next_list = makelist(bpItem(branch, FIRST));
+  bpList next_list = buffer.makelist(bpItem(branch, FIRST));
   buffer.bpatch(buffer.merge(next_list, ((Exp*)$2)->false_list), buffer.genLabel());
-  $$ = new Statement((Statement*)$5)->continue_list, (Statement*)$5)->break_list);
+  $$ = new Statement(((Statement*)$5)->continue_list, ((Statement*)$5)->break_list);
   delete($2); delete($3); delete($5);
   } ;
 Statement : IF CheckBoolScope M NewScope Statement DeleteScope ELSE N M NewScope Statement DeleteScope M {
