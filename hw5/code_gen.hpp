@@ -4,7 +4,7 @@
 #include "tokenTypes.hpp"
 #include "SymbolTable.hpp"
 #include "bp.hpp"
-typedef string reg
+typedef string reg;
 extern SymbolTable st;
 
 unordered_map<string, string> llvm_relop_op =
