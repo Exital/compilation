@@ -36,7 +36,7 @@ reg allocate_register(){ return "%t" + to_string(++register_count); }
 reg allocate_global_register(){ return "g" + to_string(++register_count); }
 
 Exp* emitAddSub(Exp* e1, Value* op, Exp* e2){
-  string op_cmd = (op_cmd->get_str() == "+") ? "add" : "sub";
+  string op_cmd = (op->get_str() == "+") ? "add" : "sub";
   CodeBuffer& buffer = CodeBuffer::instance();
   string result_reg = allocate_register();
   buffer.emit(result_reg + " = " + op_cmd + " i32" + e1->get_reg() + ", " + e2->get_reg());
@@ -55,13 +55,15 @@ void generate_check_div_by_zero_code(Exp* e2){
   buffer.emit(tmp_reg + " = icmp eq i32 0, " + e2->get_reg());
   int check_zero_br = buffer.emit("br i1 " + tmp_reg + ", label @, label @");
   string error_label = buffer.genLabel();
+  string errorMsg = "Error division by zero";
+  string len = to_string(errorMsg.length()+1);
   buffer.emit("call void @print(i8* getelementptr ([" + len + " x i8], [" + len + " x i8]* " + "@div_by_zero_error" + ", i32 0, i32 0))");
   buffer.emit("call void @exit(i32 1)");
   int cont_br = buffer.emit("br label @"); // end of error block
   string cont_label = buffer.genLabel();
 
-  bpList is_zero =  makelist(bpItem(check_zero_br, FIRST));
-  bpList not_zero = merge(makelist(bpItem(check_zero_br, SECOND), makelist(bpItem(cont_br, FIRST)));
+  bpList is_zero =  buffer.makelist(bpItem(check_zero_br, FIRST));
+  bpList not_zero = merge(buffer.makelist(bpItem(check_zero_br, SECOND), buffer.makelist(bpItem(cont_br, FIRST)));
 
   buffer.bpatch(is_zero, error_label);
   buffer.bpatch(not_zero, cont_label);
@@ -94,7 +96,7 @@ Exp* emitRelop(Exp* e1, Value* op, Exp* e2){
   buffer.emit(tmp_reg + " = icmp " + op + " i32 " + e1->get_reg() + ", " + e2->get_reg());
   int cond_br = buffer.emit("br i1 " + tmp_reg + ", label @, label @");
 
-  return new Exp("BOOL", "", makelist(bpItem(cond_br, FIRST)), makelist(bpItem(cond_br, SECOND)));
+  return new Exp("BOOL", "", buffer.makelist(bpItem(cond_br, FIRST)), buffer.makelist(bpItem(cond_br, SECOND)));
 }
 
 Exp* emitLoad(string id, string type){
@@ -114,7 +116,7 @@ Exp* emitLoad(string id, string type){
     buffer.emit(res_reg + " = trunc i32 " + exp_reg + " to i1");
     int cond_br = buffer.emit("br i1 " + res_reg + ", label @, label @");
 
-    return new Exp(type, res_reg, makelist(bpItem(cond_br, FIRST)), makelist(bpItem(cond_br, SECOND)));
+    return new Exp(type, res_reg, buffer.makelist(bpItem(cond_br, FIRST)), buffer.makelist(bpItem(cond_br, SECOND)));
   }
 
   return new Exp(type, exp_reg);
@@ -132,13 +134,13 @@ void bool_handler(Exp* e1){
   buffer.bpatch(e1->true_list, true_label);
 
   int branch = buffer.emit("br label @\n");
-  bpList phi_true = makelist(bpItem(branch, FIRST));
+  bpList phi_true = buffer.makelist(bpItem(branch, FIRST));
 
   string false_label = buffer.genLabel();
   buffer.bpatch(e1->false_list, false_label);
 
   branch = buffer.emit("br label @\n");
-  bpList phi_false = makelist(bpItem(branch, FIRST));
+  bpList phi_false = buffer.makelist(bpItem(branch, FIRST));
 
   string phi_label = buffer.genLabel();
   reg new_reg = allocate_register();
