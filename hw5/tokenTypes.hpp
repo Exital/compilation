@@ -76,7 +76,7 @@ class M : public Node
 {
 public:
     string next;
-    explicit M(const string& val) : next_inst(val) {}
+    explicit M(const string& val) : next(val) {}
 };
 
 class N : public Node
