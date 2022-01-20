@@ -1,6 +1,7 @@
 #ifndef TOKENTYPES_H
 #define TOKENTYPES_H
 #include <string>
+#include "bp.hpp"
 using namespace std;
 
 typedef string reg;
