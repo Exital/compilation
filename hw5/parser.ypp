@@ -14,7 +14,7 @@ extern int yylineno;
 extern int yylex();
 extern char* yytext;
 extern CodeBuffer& buffer;
-extern function_sp;
+extern reg function_sp;
 SymbolTable st;
 int in_loop = 0;
 
