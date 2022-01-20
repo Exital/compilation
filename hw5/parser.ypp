@@ -130,7 +130,7 @@ FuncDecl : RetType ID LPAREN Formals RPAREN {
       decl += (i == arg_types.size()-1) ? "i32" : "i32, ";
     }
     decl += ") {\n";
-    function_sp = allocate_register();
+    reg function_sp = allocate_register();
     decl += (function_sp + " = alloca [50 x i32]");
     buffer.emit(decl);
 }
@@ -138,7 +138,6 @@ FuncDecl : RetType ID LPAREN Formals RPAREN {
             st.delete_scope();
             //emit function finish
             string ret_type = ((Value*)$1)->get_str();
-            function_sp = "";
             buffer.emit("ret " + (ret_type == "VOID") ? "void" : "i32 0");
             buffer.emit("}");
            };
