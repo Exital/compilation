@@ -205,7 +205,7 @@ Statement : TypeAnnotation Type ID ASSIGN Exp SC {
        exit(1);
    }
    if (type == "BOOL") bool_handler((Exp*)$5);
-   emitStore(name, type, ((Exp*)$5)->id);
+   emitStore(name, type, ((Exp*)$5)->get_reg());
    $$ = new Statement();
    };
 
