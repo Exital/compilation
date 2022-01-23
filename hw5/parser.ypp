@@ -199,19 +199,22 @@ Statement : TypeAnnotation Type ID ASSIGN Exp SC {
    bool constvar = ((ConstType*)$1)->get_const();
    string exp_type = ((Exp*)$5)->get_type();
    delete($1);
-   delete($2); delete($3); delete($5);
+   delete($2); delete($3);
    if(can_assign_types(type, exp_type)) {
        if(!st.add_symbol(name, type, constvar)){
+           delete($5);
            errorDef(yylineno, name);
            exit(1);
        }
    } else {
+       delete($5);
        errorMismatch(yylineno);
        exit(1);
    }
    if (type == "BOOL") bool_handler((Exp*)$5);
    emitStore(name, type, ((Exp*)$5)->get_reg());
    $$ = new Statement();
+   delete($5);
    };
 
 Statement : ID ASSIGN Exp SC    {
@@ -219,22 +222,26 @@ Statement : ID ASSIGN Exp SC    {
    string type = st.get_type_by_id(id);
    bool constID = st.get_const_by_id(id);
    string exp_type = ((Exp*)$3)->get_type();
-   delete($1); delete($3);
+   delete($1);
    if(type == "ERROR" || st.get_function_by_id(id)){
+       delete($3);
        errorUndef(yylineno, id);
        exit(1);
    }
    if(!can_assign_types(type, exp_type)){
+       delete($3);
        errorMismatch(yylineno);
        exit(1);
    }
    if(constID){
+      delete($3);
       errorConstMismatch(yylineno);
       exit(1);
    }
    if (type == "BOOL") bool_handler((Exp*)$3);
    emitStore(id, type, ((Exp*)$3)->get_reg());
    $$ = new Statement();
+   delete($3);
 };
 
 
