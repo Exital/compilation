@@ -174,7 +174,6 @@ Statements : Statement  {$$ = $1;}
 
 Statement : LBRACE NewScope Statements RBRACE DeleteScope { $$ = $3; };
 
-// TODO: check what to do with const
 Statement : TypeAnnotation Type ID SC {
     string name = ((Value*)$3)->get_str();
     string type = ((Value*)$2)->get_str();
@@ -193,6 +192,7 @@ Statement : TypeAnnotation Type ID SC {
     $$ = new Statement();
  };
 
+// todo: add const literal shit
 Statement : TypeAnnotation Type ID ASSIGN Exp SC {
    string name = ((Value*)$3)->get_str();
    string type = ((Value*)$2)->get_str();
@@ -210,6 +210,9 @@ Statement : TypeAnnotation Type ID ASSIGN Exp SC {
        exit(1);
    }
    if (type == "BOOL") bool_handler((Exp*)$5);
+   if (constvar){
+      // calculate the literal value of const exp
+   }
    emitStore(name, type, ((Exp*)$5)->get_reg());
    $$ = new Statement();
    };
