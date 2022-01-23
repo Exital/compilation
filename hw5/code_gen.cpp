@@ -47,7 +47,6 @@ reg allocate_global_register(){ return "g" + to_string(++register_count); }
 
 Exp* emitAddSub(Exp* e1, Value* op, Exp* e2){
   string op_cmd = (op->get_str() == "+") ? "add" : "sub";
-  CodeBuffer& buffer = CodeBuffer::instance();
   string result_reg = allocate_register();
   buffer.emit(result_reg + " = " + op_cmd + " i32" + e1->get_reg() + ", " + e2->get_reg());
 
