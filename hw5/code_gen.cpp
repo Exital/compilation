@@ -173,5 +173,5 @@ Exp* emitCallFunc(string r_type, string func_id, const vector<string>& param_typ
   for(size_t i = 0; i < param_types.size(); i++) to_emit += (i == param_types.size()-1) ? "i32 " + param_regs[i] : "i32 " + param_regs[i] + ", ";
   to_emit += ")";
   buffer.emit(to_emit);
-  return new Exp(return_type, new_exp_id);
+  return new Exp(r_type, new_exp_id);
 }
