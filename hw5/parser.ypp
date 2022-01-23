@@ -251,12 +251,12 @@ Statement : RETURN SC   {
 
 Statement : RETURN Exp SC   {
     string exp_type = ((Exp*)$2)->get_type();
-    delete($2);
     if(exp_type == "VOID" || !can_assign_types(st.last_func_return_type, exp_type)){
         errorMismatch(yylineno);
         exit(1);
     }
     if (exp_type == "BOOL") bool_handler((Exp*)$2);
+    delete($2);
     $$ = new Statement();
     buffer.emit("ret i32 " + ((Exp*)$2)->get_reg());
 };
