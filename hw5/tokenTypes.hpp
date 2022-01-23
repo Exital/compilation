@@ -65,8 +65,8 @@ public:
     bpList false_list;
     string get_type() {return type;}
     void set_reg(reg new_reg) { regi = new_reg;}
-    bool is_numeric() {return (type == "INT") || (type == "BYTE");}
-    bool is_logic() {return type == "BOOL";}
+    bool is_numeric() {return (type == "INT") || (type == "BYTE") || ( type == "i32") || (type == "i8");}
+    bool is_logic() {return type == "BOOL" || (type == "i1");}
     reg get_reg(){return regi;}
     Exp(const string &type, const reg &reg = "", const bpList &true_list = bpList(), const bpList &false_list = bpList(), string next_label = "")
      : type(type), regi(reg), true_list(true_list), false_list(false_list), next_label(next_label) {};
