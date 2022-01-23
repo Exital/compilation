@@ -49,7 +49,7 @@ Exp* emitAddSub(Exp* e1, Value* op, Exp* e2){
   string op_cmd = (op->get_str() == "+") ? "add" : "sub";
   CodeBuffer& buffer = CodeBuffer::instance();
   string result_reg = allocate_register();
-  buffer.emit(result_reg + " = " + op_cmd + " i32 " + e1->get_reg() + ", " + e2->get_reg());
+  buffer.emit(result_reg + " = " + op_cmd + " i32" + e1->get_reg() + ", " + e2->get_reg());
 
   string result_type = get_return_type_of_binop(e1, e2);
   if (result_type == "BYTE"){
