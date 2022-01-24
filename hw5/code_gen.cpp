@@ -125,7 +125,7 @@ Exp* emitLoad(string id, string type){
       return new Exp(type, "%"+to_string(reg_num));
   }
   reg ptr_reg = allocate_register();
-  CodeBuffer::instance().emit(ptr_reg + " = getelementptr [50 x i32] , [50 x i32]* " + function_sp + ", i32 0, i32 " + to_string(id_offset));
+  CodeBuffer::instance().emit(ptr_reg + " = getelementptr [50 x i32] , [50 x i32]* " + last_func_stack_ptr + ", i32 0, i32 " + to_string(id_offset));
   reg exp_reg = allocate_register();
   CodeBuffer::instance().emit(exp_reg + " = load i32, i32* " + ptr_reg);
   if(type == "BOOL"){
