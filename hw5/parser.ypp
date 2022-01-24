@@ -282,14 +282,14 @@ Statement : IF CheckBoolScope M NewScope Statement DeleteScope ELSE N M NewScope
   delete($2); delete($3); delete($5); delete($8); delete($9); delete($11); delete($13);
   $$ = new Statement(cont_l, break_l);
 };
-Statement : WHILE {in_loop++;} M CheckBoolScope NewScope M Statement N M DeleteScope {
+Statement : WHILE M CheckBoolScopeWhile NewScope M Statement N M DeleteScope {
   in_loop--;
-  buffer.bpatch(((Exp*)$4)->false_list, ((M*)$9)->next);
-  buffer.bpatch(((Exp*)$4)->true_list, ((M*)$6)->next);
-  buffer.bpatch(((N*)$8)->next_list, ((M*)$3)->next); // loop
-  buffer.bpatch(((Statement*)$7)->continue_list, ((M*)$3)->next);
-  buffer.bpatch(((Statement*)$7)->break_list, ((M*)$9)->next);
-  delete($3); delete($4); delete($6); delete($7); delete($8); delete($9);
+  buffer.bpatch(((Exp*)$3)->false_list, ((M*)$8)->next);
+  buffer.bpatch(((Exp*)$3)->true_list, ((M*)$7)->next);
+  buffer.bpatch(((N*)$7)->next_list, ((M*)$2)->next); // loop
+  buffer.bpatch(((Statement*)$6)->continue_list, ((M*)$2)->next);
+  buffer.bpatch(((Statement*)$6)->break_list, ((M*)$8)->next);
+  delete($2); delete($3); delete($5); delete($6); delete($7); delete($8);
   $$ = new Statement();
  } ;
 
@@ -505,6 +505,16 @@ Exp : LPAREN Type RPAREN Exp{
 
 
 CheckBoolScope : LPAREN Exp RPAREN{
+    if(!((Exp*)$2)->is_logic()){
+        delete($2);
+        errorMismatch(yylineno);
+        exit(1);
+    }
+    $$ = $2;
+}  ;
+
+CheckBoolScopeWhile : LPAREN Exp RPAREN{
+    in_loop++;
     if(!((Exp*)$2)->is_logic()){
         delete($2);
         errorMismatch(yylineno);
