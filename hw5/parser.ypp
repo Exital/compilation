@@ -440,7 +440,7 @@ Exp : Call  { $$ = $1;
 
 Exp : NUM {
   int value = ((Value*)$1)->get_num();
-  $$ = new Exp("INT", to_string(value);
+  $$ = new Exp("INT", to_string(value));
   ((Exp*)$$)->literal_value = value;
   delete($1);
  };

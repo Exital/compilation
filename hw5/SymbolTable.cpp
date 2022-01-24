@@ -89,7 +89,7 @@ string SymbolTable::get_type_by_id(string id){
     return declared_symbols[id]->get_type();
 }
 
-string get_literal_value(string id){
+string SymbolTable::get_literal_value(string id){
   if (!id_exists(id)) return "ERROR";
   return declared_symbols[id]->literal_value;
 }
