@@ -259,9 +259,10 @@ Statement : RETURN Exp SC   {
         exit(1);
     }
     if (exp_type == "BOOL") bool_handler((Exp*)$2);
-    delete($2);
+
     $$ = new Statement();
     buffer.emit("ret i32 " + ((Exp*)$2)->get_reg());
+    delete($2);
 };
 
 Statement : IF CheckBoolScope M NewScope Statement DeleteScope %prec IF   {
