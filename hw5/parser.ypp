@@ -361,10 +361,12 @@ Call : ID LPAREN RPAREN {
 
 ExpList : Exp   {
   string type = ((Exp*)$1)->get_type();
+  if (type == "BOOL") bool_handler(((Exp*)$1));
   $$ = $1;
 };
 ExpList : Exp {
   string type = ((Exp*)$1)->get_type();
+  if (type == "BOOL") bool_handler(((Exp*)$1));
   } COMMA ExpList {$$ = $1; $$->next = $4;};
 
 
