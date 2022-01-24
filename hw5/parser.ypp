@@ -201,10 +201,11 @@ Statement : TypeAnnotation Type ID ASSIGN Exp SC {
    string type = ((Value*)$2)->get_str();
    bool constvar = ((ConstType*)$1)->get_const();
    string exp_type = ((Exp*)$5)->get_type();
+   string literal_value = ((Exp*)$5)->literal_value;
    delete($1);
    delete($2); delete($3);
    if(can_assign_types(type, exp_type)) {
-       if(!st.add_symbol(name, type, constvar)){
+       if(!st.add_symbol(name, type, constvar, literal_value)){
            errorDef(yylineno, name);
            exit(1);
        }
@@ -213,10 +214,13 @@ Statement : TypeAnnotation Type ID ASSIGN Exp SC {
        exit(1);
    }
    if (type == "BOOL") bool_handler((Exp*)$5);
-   if (constvar){
-      // calculate the literal value of const exp
+   if (constvar && literal_value != ""){
+      // nothing to do here since the st already has the values
    }
-   emitStore(name, type, ((Exp*)$5)->get_reg());
+   else
+   {
+    emitStore(name, type, ((Exp*)$5)->get_reg());
+   }
    $$ = new Statement();
    };
 
@@ -407,12 +411,19 @@ Exp : Exp MULDIV Exp {
 Exp : ID  {
     string id_name = ((Value*)$1)->get_str();
     string type = st.get_type_by_id(id_name);
+    bool is_const_id = st.get_const_by_id(id_name);
+    string literal_value = st.get_literal_value(id_name);
     delete($1);
     if (type == "ERROR" || st.get_function_by_id(id_name)) {
         errorUndef(yylineno, id_name);
         exit(1);
     }
+    if (is_const_id && literal_value != ""){
+    $$ = new Exp(type, literal_value);
+
+    } else {
     $$ = emitLoad(id_name, type);
+    }
     };
 
 Exp : Call  { $$ = $1;
@@ -428,7 +439,9 @@ Exp : Call  { $$ = $1;
     };
 
 Exp : NUM {
-  $$ = new Exp("INT", to_string(((Value*)$1)->get_num()));
+  int value = ((Value*)$1)->get_num();
+  $$ = new Exp("INT", to_string(value);
+  ((Exp*)$$)->literal_value = value;
   delete($1);
  };
 
@@ -440,6 +453,7 @@ Exp : NUM B {
         exit(1);
     }
     $$ = new Exp("BYTE", to_string(value)); };
+    ((Exp*)$$)->literal_value = value;
 
 Exp : STRING {
   reg new_global_reg = allocate_global_register();
@@ -502,7 +516,6 @@ Exp : Exp RELOP Exp  {
     delete($1); delete($2); delete($3);
  };
 
-// TODO: think about casting logic.
 Exp : LPAREN Type RPAREN Exp{
   string to_type = ((Value*)$2)->get_str();
   string from_type = ((Exp*)$4)->get_type();

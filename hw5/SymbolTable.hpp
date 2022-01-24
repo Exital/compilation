@@ -15,7 +15,8 @@ class Symbol{
     int offset = 0;
 
 public:
-    Symbol(string id, string type, bool is_const=false) : id(id), type(type), is_const(is_const) {}
+    string literal_value;
+    Symbol(string id, string type, bool is_const=false, string literal_value = "") : id(id), type(type), is_const(is_const), literal_value(literal_value) {}
     string& get_id() {return id;}
     string& get_type() {return type;}
     bool& get_const() {return is_const;}
@@ -54,10 +55,11 @@ public:
 
     void new_scope();
     bool id_exists(string id);
-    bool add_symbol(string id, string type, bool is_const=false);
+    bool add_symbol(string id, string type, bool is_const=false, string literal_value = "");
     bool add_function(string id, string ret_type, vector<string> argTypes);
     string add_function_args_symbols(vector<string> arg_ids, vector<string> argTypes, vector<bool> arg_consts);
     string get_type_by_id(string id);
+    string get_literal_value(string id);
     bool get_const_by_id(string id);
     int get_offset_by_id(string id);
     Function* get_function_by_id(string id);

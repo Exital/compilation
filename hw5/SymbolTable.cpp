@@ -38,11 +38,11 @@ void SymbolTable::new_scope() {
 
 bool SymbolTable::id_exists(string id){return !(declared_symbols.find(id) == declared_symbols.end());}
 
-bool SymbolTable::add_symbol(string id, string type, bool is_const){
+bool SymbolTable::add_symbol(string id, string type, bool is_const, string literal_value = ""){
     if (id_exists(id)){
         return false;
     }
-    Symbol* new_symbol = new Symbol(id, type, is_const);
+    Symbol* new_symbol = new Symbol(id, type, is_const, literal_value);
     declared_symbols.insert({id, new_symbol});
 
     //add symbol
@@ -88,6 +88,12 @@ string SymbolTable::get_type_by_id(string id){
     if (!id_exists(id)) return "ERROR";
     return declared_symbols[id]->get_type();
 }
+
+string get_literal_value(string id){
+  if (!id_exists(id)) return "ERROR";
+  return declared_symbols[id]->literal_value;
+}
+
 
 bool SymbolTable::get_const_by_id(string id){
     if (!id_exists(id)) return false;

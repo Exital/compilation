@@ -63,6 +63,7 @@ class Exp : public Node
     reg regi;
     string next_label;
 public:
+    string literal_value = "";
     bpList true_list;
     bpList false_list;
     string get_type() {return type;}
