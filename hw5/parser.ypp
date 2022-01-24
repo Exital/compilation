@@ -402,7 +402,17 @@ Exp : ID  {
     $$ = emitLoad(id_name, type);
     };
 
-Exp : Call  { $$ = $1; };
+Exp : Call  { $$ = $1;
+    if(((Exp*)$$)->get_type() == "BOOL"){
+      string tmpreg = allocate_register();
+      buffer.emit(tmpreg + " = trunc i32 " + $$->getReg() + " to i1");
+      int br = buffer.emit("br i1 " + tmpreg + ", label @, label @");
+      $$->true_list = buffer.makelist({br,FIRST});
+      $$->false_list = buffer.makelist({br,SECOND});
+    }
+
+
+    };
 
 Exp : NUM {
   $$ = new Exp("INT", to_string(((Value*)$1)->get_num()));
