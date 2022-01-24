@@ -405,10 +405,10 @@ Exp : ID  {
 Exp : Call  { $$ = $1;
     if(((Exp*)$$)->get_type() == "BOOL"){
       string tmpreg = allocate_register();
-      buffer.emit(tmpreg + " = trunc i32 " + $$->getReg() + " to i1");
+      buffer.emit(tmpreg + " = trunc i32 " + ((Exp*)$$)->get_reg() + " to i1");
       int br = buffer.emit("br i1 " + tmpreg + ", label @, label @");
-      $$->true_list = buffer.makelist({br,FIRST});
-      $$->false_list = buffer.makelist({br,SECOND});
+      ((Exp*)$$)->true_list = buffer.makelist({br,FIRST});
+      ((Exp*)$$)->false_list = buffer.makelist({br,SECOND});
     }
 
 
