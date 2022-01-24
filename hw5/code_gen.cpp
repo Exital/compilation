@@ -108,7 +108,7 @@ Exp* emitRelop(Exp* e1, Value* op, Exp* e2){
 }
 
 Exp* emitLoad(string id, string type){
-  int id_offset = st.get_offset_by_id(id);
+  int id_offset = st.get_offset_by_id(id_name);
   if(id_offset < 0)
   { // function argument - have %n, n is place of arg decleration in function
       int reg_num = abs(id_offset) - 1;
