@@ -284,8 +284,8 @@ Statement : IF CheckBoolScope M NewScope Statement DeleteScope ELSE N M NewScope
 };
 Statement : WHILE M CheckBoolScopeWhile NewScope M Statement N M DeleteScope {
   in_loop--;
+  buffer.bpatch(((Exp*)$3)->true_list, ((M*)$5)->next);
   buffer.bpatch(((Exp*)$3)->false_list, ((M*)$8)->next);
-  buffer.bpatch(((Exp*)$3)->true_list, ((M*)$7)->next);
   buffer.bpatch(((N*)$7)->next_list, ((M*)$2)->next); // loop
   buffer.bpatch(((Statement*)$6)->continue_list, ((M*)$2)->next);
   buffer.bpatch(((Statement*)$6)->break_list, ((M*)$8)->next);
