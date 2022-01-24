@@ -411,19 +411,12 @@ Exp : Exp MULDIV Exp {
 Exp : ID  {
     string id_name = ((Value*)$1)->get_str();
     string type = st.get_type_by_id(id_name);
-    bool is_const_id = st.get_const_by_id(id_name);
-    string literal_value = st.get_literal_value(id_name);
     delete($1);
     if (type == "ERROR" || st.get_function_by_id(id_name)) {
         errorUndef(yylineno, id_name);
         exit(1);
     }
-    if (is_const_id && literal_value != ""){
-    $$ = new Exp(type, literal_value);
-
-    } else {
     $$ = emitLoad(id_name, type);
-    }
     };
 
 Exp : Call  { $$ = $1;

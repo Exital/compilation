@@ -108,6 +108,9 @@ Exp* emitRelop(Exp* e1, Value* op, Exp* e2){
 }
 
 Exp* emitLoad(string id, string type){
+  if (st.get_const_by_id(id) && st.get_literal_value(id) != ""){
+    return new Exp(type, st.get_literal_value(id));
+  }
   int id_offset = st.get_offset_by_id(id);
   reg exp_reg = "";
   if (id_offset < 0){
