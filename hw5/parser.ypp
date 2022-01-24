@@ -483,12 +483,13 @@ Exp : Exp RELOP Exp  {
 Exp : LPAREN Type RPAREN Exp{
   string to_type = ((Value*)$2)->get_str();
   string from_type = ((Exp*)$4)->get_type();
-  delete($2); delete($4);
+  delete($2);
   if(!(can_be_casted(from_type, to_type))){
       errorMismatch(yylineno);
       exit(1);
   }
-  $$ = new Exp(to_type, allocate_register());
+  $$ = new Exp(to_type, ((Exp*)$4)->get_reg());
+  delete($4);
 };
 
 
