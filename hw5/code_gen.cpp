@@ -108,26 +108,34 @@ Exp* emitRelop(Exp* e1, Value* op, Exp* e2){
 }
 
 Exp* emitLoad(string id, string type){
-  int id_offset = st.get_offset_by_id(id);
-  reg exp_reg = "";
-  if (id_offset < 0){
+  int id_offset = st.get_offset_by_id(id_name);
+  if(id_offset < 0)
+  { // function argument - have %n, n is place of arg decleration in function
       int reg_num = abs(id_offset) - 1;
-      exp_reg = "%"+to_string(reg_num);
-  } else{
-    reg ptr_reg = allocate_register();
-    exp_reg = allocate_register();
-    buffer.emit(ptr_reg + " = getelementptr [50 x i32] , [50 x i32]* " + function_sp + ", i32 0, i32 " + to_string(id_offset));
-    buffer.emit(exp_reg + " = load i32, i32* " + ptr_reg);
+
+          if(type == "BOOL"){
+              reg exp_reg = allocate_register();
+              CodeBuffer::instance().emit(exp_reg + " = trunc i32 " + "%"+to_string(reg_num) + " to i1");
+              int index = CodeBuffer::instance().emit("br i1 " + exp_reg + ", label @, label @");
+              bpList truelst = CodeBuffer::instance().makelist(bpItem(index, FIRST));
+              bpList falselst = CodeBuffer::instance().makelist(bpItem(index, SECOND));
+              return new Exp(type, exp_reg, truelst, falselst);
+          }
+
+      return new Exp(type, "%"+to_string(reg_num));
   }
-
-  if (type == "BOOL"){
-    reg res_reg = allocate_register();
-    buffer.emit(res_reg + " = trunc i32 " + exp_reg + " to i1");
-    int cond_br = buffer.emit("br i1 " + res_reg + ", label @, label @");
-
-    return new Exp(type, res_reg, buffer.makelist(bpItem(cond_br, FIRST)), buffer.makelist(bpItem(cond_br, SECOND)));
+  reg ptr_reg = allocate_register();
+  CodeBuffer::instance().emit(ptr_reg + " = getelementptr [50 x i32] , [50 x i32]* " + last_func_stack_ptr + ", i32 0, i32 " + to_string(id_offset));
+  reg exp_reg = allocate_register();
+  CodeBuffer::instance().emit(exp_reg + " = load i32, i32* " + ptr_reg);
+  if(type == "BOOL"){
+      reg exp_bool_reg = allocate_register();
+      CodeBuffer::instance().emit(exp_bool_reg + " = trunc i32 " + exp_reg + " to i1");
+      int index = CodeBuffer::instance().emit("br i1 " + exp_bool_reg + ", label @, label @");
+      bpList truelst = CodeBuffer::instance().makelist(bpItem(index, FIRST));
+      bpList falselst = CodeBuffer::instance().makelist(bpItem(index, SECOND));
+      return new Exp(type, exp_bool_reg, truelst, falselst);
   }
-
   return new Exp(type, exp_reg);
 }
 
