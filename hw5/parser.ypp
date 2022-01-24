@@ -434,7 +434,7 @@ Exp : Call  { $$ = $1;
 Exp : NUM {
   int value = ((Value*)$1)->get_num();
   $$ = new Exp("INT", to_string(value));
-  ((Exp*)$$)->literal_value = value;
+  ((Exp*)$$)->literal_value = to_string(value);
   delete($1);
  };
 
@@ -446,7 +446,7 @@ Exp : NUM B {
         exit(1);
     }
     $$ = new Exp("BYTE", to_string(value));
-    ((Exp*)$$)->literal_value = value;
+    ((Exp*)$$)->literal_value = to_string(value);
     };
 
 
