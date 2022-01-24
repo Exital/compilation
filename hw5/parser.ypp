@@ -361,12 +361,10 @@ Call : ID LPAREN RPAREN {
 
 ExpList : Exp   {
   string type = ((Exp*)$1)->get_type();
-  if (type == "BOOL") bool_handler(((Exp*)$1));
   $$ = $1;
 };
 ExpList : Exp {
   string type = ((Exp*)$1)->get_type();
-  if (type == "BOOL") bool_handler(((Exp*)$1));
   } COMMA ExpList {$$ = $1; $$->next = $4;};
 
 
@@ -458,11 +456,11 @@ Exp : Exp AND M Exp {
     delete($1); delete($3); delete($4);
 };
 
-Exp : Exp OR {if (((Exp*)$1)->get_type() == "BOOL") bool_handler((Exp*)$1); } M Exp {
-  handle_logic((Exp*)$1, (Exp*)$5);
-  buffer.bpatch(((Exp*)$1)->false_list, ((M*)$4)->next);
-  $$ = new Exp("BOOL", "", buffer.merge(((Exp*)$1)->true_list, ((Exp*)$5)->true_list), ((Exp*)$5)->false_list);
-  delete($1); delete($4); delete($5);
+Exp : Exp OR M Exp {
+  handle_logic((Exp*)$1, (Exp*)$4);
+  buffer.bpatch(((Exp*)$1)->false_list, ((M*)$3)->next);
+  $$ = new Exp("BOOL", "", buffer.merge(((Exp*)$1)->true_list, ((Exp*)$4)->true_list), ((Exp*)$4)->false_list);
+  delete($1); delete($3); delete($4);
 }
 
 
