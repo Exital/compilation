@@ -452,8 +452,10 @@ Exp : NUM B {
         errorByteTooLarge(yylineno, to_string(value));
         exit(1);
     }
-    $$ = new Exp("BYTE", to_string(value)); };
+    $$ = new Exp("BYTE", to_string(value));
     ((Exp*)$$)->literal_value = value;
+    };
+
 
 Exp : STRING {
   reg new_global_reg = allocate_global_register();
