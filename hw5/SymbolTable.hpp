@@ -55,7 +55,7 @@ public:
 
     void new_scope();
     bool id_exists(string id);
-    bool add_symbol(string id, string type, bool is_const=false, string literal_value = "");
+    bool add_symbol(string id, string type, bool is_const=false, string literal_value="");
     bool add_function(string id, string ret_type, vector<string> argTypes);
     string add_function_args_symbols(vector<string> arg_ids, vector<string> argTypes, vector<bool> arg_consts);
     string get_type_by_id(string id);

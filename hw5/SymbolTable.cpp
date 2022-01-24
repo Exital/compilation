@@ -38,7 +38,7 @@ void SymbolTable::new_scope() {
 
 bool SymbolTable::id_exists(string id){return !(declared_symbols.find(id) == declared_symbols.end());}
 
-bool SymbolTable::add_symbol(string id, string type, bool is_const, string literal_value = ""){
+bool SymbolTable::add_symbol(string id, string type, bool is_const, string literal_value){
     if (id_exists(id)){
         return false;
     }
