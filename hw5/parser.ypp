@@ -405,8 +405,7 @@ Exp : ID  {
 Exp : Call  { $$ = $1; };
 
 Exp : NUM {
-  int value = ((Value*)$1)->get_num();
-  $$ = new Exp("INT", to_string(value));
+  $$ = new Exp("INT", to_string(((Value*)$1)->get_num()));
   delete($1);
  };
 
