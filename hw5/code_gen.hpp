@@ -31,6 +31,6 @@ void bool_handler(Exp* e1);
 
 Exp* emitCallFunc(string r_type, string func_id, const vector<string>& param_types = vector<string>(), const vector<string>& param_regs=vector<string>());
 
-
+Exp* llvmCasting(Exp* e1, string to_type);
 
 #endif //CODE_GEN_H

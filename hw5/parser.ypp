@@ -511,8 +511,7 @@ Exp : LPAREN Type RPAREN Exp{
       errorMismatch(yylineno);
       exit(1);
   }
-  $$ = new Exp(to_type, ((Exp*)$4)->get_reg());
-  delete($4);
+  $$ = llvmCasting((Exp*)$4), to_type);
 };
 
 

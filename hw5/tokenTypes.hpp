@@ -67,6 +67,7 @@ public:
     bpList false_list;
     string get_type() {return type;}
     void set_reg(reg new_reg) { regi = new_reg;}
+    void set_type(string new_type) {type = new_type;}
     bool is_numeric() {return (type == "INT") || (type == "BYTE");}
     bool is_logic() {return type == "BOOL";}
     reg get_reg(){return regi;}

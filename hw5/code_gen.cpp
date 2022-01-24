@@ -174,3 +174,26 @@ Exp* emitCallFunc(string r_type, string func_id, const vector<string>& param_typ
   buffer.emit(to_emit);
   return new Exp(r_type, new_exp_id);
 }
+
+Exp* llvmCasting(Exp* e1, string to_type){
+  string from_type = e1->get_type();
+
+  // casting from int to byte
+  if (from_type == "INT" && to_type == "BYTE"){
+    reg new_result_reg = allocate_register();
+    buffer.emit(new_result_reg + " = and i32 255, " + e1->get_reg());
+    e1->set_type("BYTE");
+    e1->set_reg(new_result_reg);
+  }
+
+  // casting from byte to int
+  if (from_type == "BYTE" && to_type == "INT"){
+    reg result_reg = allocate_register();
+    buffer.emit(result_reg + " = " + "add" + " i32 " + "0" + ", " + e1->get_reg());
+
+    e1->set_type("INT");
+    e1->set_reg(result_reg);
+  }
+
+  return e1;
+}
