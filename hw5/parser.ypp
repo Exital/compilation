@@ -168,7 +168,10 @@ FormalDecl : TypeAnnotation Type ID {
 
 Statements : Statement  {$$ = $1;}
            |Statements M Statement   {
-           $$ = new Statement(buffer.merge(((Statement*)$1)->break_list, ((Statement*)$3)->break_list), buffer.merge(((Statement*)$1)->continue_list, ((Statement*)$3)->continue_list));
+           bpList continue_list = buffer.merge(((Statement*)$1)->continue_list, ((Statement*)$3)->continue_list);
+           bpList break_list = buffer.merge(((Statement*)$1)->break_list, ((Statement*)$3)->break_list);
+           bpList next_list = bpList();
+           $$ = new Statement(next_list, break_list, continue_list);
            delete($1); delete($2); delete($3);
            };
 
@@ -270,17 +273,23 @@ Statement : IF CheckBoolScope M NewScope Statement DeleteScope %prec IF   {
   int branch = buffer.emit("br label @\n");
   bpList next_list = buffer.makelist(bpItem(branch, FIRST));
   buffer.bpatch(buffer.merge(next_list, ((Exp*)$2)->false_list), buffer.genLabel());
-  $$ = new Statement(((Statement*)$5)->continue_list, ((Statement*)$5)->break_list);
+
+  bpList continue_list =  ((Statement*)$5)->continue_list;
+  bpList break_list = ((Statement*)$5)->break_list;
+  $$ = new Statement(next_list, break_list, continue_list);
+
   delete($2); delete($3); delete($5);
   } ;
 Statement : IF CheckBoolScope M NewScope Statement DeleteScope ELSE N M NewScope Statement DeleteScope M {
   buffer.bpatch(((Exp*)$2)->true_list, ((M*)$3)->next);
   buffer.bpatch(((Exp*)$2)->false_list, ((M*)$9)->next);
   buffer.bpatch(((N*)$8)->next_list, ((M*)$13)->next);
+  bpList next_l = buffer.merge(((Statement*)$5)->next_list, ((Statement*)$11)->next_list);
+  next_l = buffer.merge(next_l, ((N*)$8)->next_list);
   bpList cont_l = buffer.merge(((Statement*)$5)->continue_list, ((Statement*)$11)->continue_list);
   bpList break_l = buffer.merge(((Statement*)$5)->break_list, ((Statement*)$11)->break_list);
   delete($2); delete($3); delete($5); delete($8); delete($9); delete($11); delete($13);
-  $$ = new Statement(cont_l, break_l);
+  $$ = new Statement(next_l, break_l, cont_l);
 };
 Statement : WHILE M CheckBoolScopeWhile NewScope M Statement N M DeleteScope {
   in_loop--;
@@ -291,6 +300,7 @@ Statement : WHILE M CheckBoolScopeWhile NewScope M Statement N M DeleteScope {
   buffer.bpatch(((Statement*)$6)->break_list, ((M*)$8)->next);
   delete($2); delete($3); delete($5); delete($6); delete($7); delete($8);
   $$ = new Statement();
+  ((Statement*)$$)->next_list = buffer.merge(((Exp*)$3)->false_list, ((Statement*)$6)->break_list);
  } ;
 
 Statement : BREAK N SC{
@@ -298,7 +308,8 @@ Statement : BREAK N SC{
         errorUnexpectedBreak(yylineno);
         exit(1);
      }
-    $$ = new Statement(((N*)$2)->next_list, bpList());
+    $$ = new Statement();
+    ((Statement*)$$)->break_list = ((N*)$2)->next_list;
     delete($2);
     } ;
 
@@ -307,7 +318,8 @@ Statement : CONTINUE N SC{
         errorUnexpectedContinue(yylineno);
         exit(1);
      }
-     $$ = new Statement(bpList(), ((N*)$2)->next_list);
+     $$ = new Statement();
+     ((Statement*)$$)->continue_list = ((N*)$2)->next_list;
      delete($2);
     };
 

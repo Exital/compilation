@@ -38,9 +38,11 @@ class Statement : public Node
 public:
     bpList break_list;
     bpList continue_list;
+    bpList next_list;
     bpList get_break_list() {return break_list;}
     bpList get_continue_list() {return continue_list;}
-    explicit Statement(const bpList &next_list = bpList(), const bpList &continue_list = bpList()) : break_list(next_list) , continue_list(continue_list) {}
+    explicit Statement(const bpList &next_list = bpList(), const bpList &break_list = bpList(), const bpList &continue_list = bpList()) :
+    next_list(next_list), break_list(break_list) , continue_list(continue_list) {}
 };
 
 class FormalDecl : public Node
