@@ -19,7 +19,7 @@ string get_return_type_of_binop(Exp* e1, Exp* e2){
   return (e1->get_type() == e2->get_type()) && (e1->get_type() == "BYTE") ? "BYTE" : "INT";
 }
 
-void initBuffer(){
+void init_buffer(){
   string errorMsg = "Error division by zero";
 
   string declarations = "declare i32 @printf(i8*, ...)\n";
@@ -45,7 +45,7 @@ void initBuffer(){
 reg allocate_register(){ return "%t" + to_string(++register_count); }
 reg allocate_global_register(){ return "g" + to_string(++register_count); }
 
-Exp* emitAddSub(Exp* e1, Value* op, Exp* e2){
+Exp* emit_add_sub(Exp* e1, Value* op, Exp* e2){
   string op_cmd = (op->get_str() == "+") ? "add" : "sub";
   string result_reg = allocate_register();
   buffer.emit(result_reg + " = " + op_cmd + " i32 " + e1->get_reg() + ", " + e2->get_reg());
@@ -77,7 +77,7 @@ void generate_check_div_by_zero_code(Exp* e2){
   buffer.bpatch(not_zero, cont_label);
 }
 
-Exp* emitMulDiv(Exp* e1, Value* op, Exp* e2){
+Exp* emit_mul_div(Exp* e1, Value* op, Exp* e2){
   string op_cmd = (op->get_str() == "*") ? "mul" : "sdiv";
 
   if (op_cmd == "sdiv") {
@@ -97,7 +97,7 @@ Exp* emitMulDiv(Exp* e1, Value* op, Exp* e2){
   return new Exp(res_type, res_reg);
 }
 
-Exp* emitRelop(Exp* e1, Value* op, Exp* e2){
+Exp* emit_relop(Exp* e1, Value* op, Exp* e2){
   string op_cmd = llvm_relop_op[op->get_str()];
 
   reg tmp_reg = allocate_register();
@@ -107,7 +107,7 @@ Exp* emitRelop(Exp* e1, Value* op, Exp* e2){
   return new Exp("BOOL", "", buffer.makelist(bpItem(cond_br, FIRST)), buffer.makelist(bpItem(cond_br, SECOND)));
 }
 
-Exp* emitLoad(string id, string type){
+Exp* emit_load(string id, string type){
   if (st.get_const_by_id(id) && st.get_literal_value(id) != ""){
     return new Exp(type, st.get_literal_value(id));
   }
@@ -134,7 +134,7 @@ Exp* emitLoad(string id, string type){
   return new Exp(type, exp_reg);
 }
 
-void emitStore(string id, string type, string val){
+void emit_store(string id, string type, string val){
   int id_offset = st.get_offset_by_id(id);
   reg ptr_reg = allocate_register();
   buffer.emit(ptr_reg + " = getelementptr [50 x i32] , [50 x i32]* " + function_sp + ", i32 0, i32 " + to_string(id_offset));
@@ -162,7 +162,7 @@ void bool_handler(Exp* e1){
   e1->set_reg(new_reg);
 }
 
-Exp* emitCallFunc(string r_type, string func_id, const vector<string>& param_types, const vector<string>& param_regs){
+Exp* emit_function_call(string r_type, string func_id, const vector<string>& param_types, const vector<string>& param_regs){
   if (func_id == "print"){
     buffer.emit("call void @print(i8* " + param_regs[0] + ")");
     return new Exp(r_type, func_id);
@@ -178,7 +178,7 @@ Exp* emitCallFunc(string r_type, string func_id, const vector<string>& param_typ
   return new Exp(r_type, new_exp_id);
 }
 
-Exp* llvmCasting(Exp* e1, string to_type){
+Exp* llvm_casting(Exp* e1, string to_type){
   string from_type = e1->get_type();
 
   // casting from int to byte

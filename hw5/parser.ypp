@@ -191,7 +191,7 @@ Statement : TypeAnnotation Type ID SC {
         errorDef(yylineno, name);
         exit(1);
     }
-    emitStore(name, type, "0");
+    emit_store(name, type, "0");
     $$ = new Statement();
  };
 
@@ -219,7 +219,7 @@ Statement : TypeAnnotation Type ID ASSIGN Exp SC {
    }
    else
    {
-    emitStore(name, type, ((Exp*)$5)->get_reg());
+    emit_store(name, type, ((Exp*)$5)->get_reg());
    }
    $$ = new Statement();
    };
@@ -243,7 +243,7 @@ Statement : ID ASSIGN Exp SC    {
       exit(1);
    }
    if (type == "BOOL") bool_handler((Exp*)$3);
-   emitStore(id, type, ((Exp*)$3)->get_reg());
+   emit_store(id, type, ((Exp*)$3)->get_reg());
    $$ = new Statement();
 };
 
@@ -357,7 +357,7 @@ Call : ID LPAREN ExpList RPAREN {
         }
     }
     // emit call function
-    $$ = emitCallFunc(func->get_type(), func_id, param_types, param_regs);
+    $$ = emit_function_call(func->get_type(), func_id, param_types, param_regs);
 } ;
 
 Call : ID LPAREN RPAREN {
@@ -373,7 +373,7 @@ Call : ID LPAREN RPAREN {
         errorPrototypeMismatch(yylineno, func_id, args_types);
         exit(1);
     }
-    $$ = emitCallFunc(func->get_type(), func_id);
+    $$ = emit_function_call(func->get_type(), func_id);
 } ;
 
 ExpList : Exp   {
@@ -398,13 +398,13 @@ Exp : LPAREN Exp RPAREN { $$ = $2; };
 
 Exp : Exp ADDSUB Exp {
     handle_binop((Exp*)$1, (Exp*)$3);
-    $$ = emitAddSub((Exp*)$1, (Value*)$2, (Exp*)$3);
+    $$ = emit_add_sub((Exp*)$1, (Value*)$2, (Exp*)$3);
     delete($1); delete($2); delete($3);
  };
 
 Exp : Exp MULDIV Exp {
     handle_binop((Exp*)$1, (Exp*)$3);
-    $$ = emitMulDiv((Exp*)$1, (Value*)$2, (Exp*)$3);
+    $$ = emit_mul_div((Exp*)$1, (Value*)$2, (Exp*)$3);
     delete($1); delete($2); delete($3);
 };
 
@@ -416,7 +416,7 @@ Exp : ID  {
         errorUndef(yylineno, id_name);
         exit(1);
     }
-    $$ = emitLoad(id_name, type);
+    $$ = emit_load(id_name, type);
     };
 
 Exp : Call  { $$ = $1;
@@ -500,14 +500,14 @@ Exp : Exp OR M Exp {
 
 Exp : Exp EQUALITY Exp {
     handle_relop((Exp*)$1, (Exp*)$3);
-    $$ = emitRelop((Exp*)$1, (Value*)$2, (Exp*)$3);
+    $$ = emit_relop((Exp*)$1, (Value*)$2, (Exp*)$3);
     delete($1); delete($2); delete($3);
  };
 
 
 Exp : Exp RELOP Exp  {
     handle_relop((Exp*)$1, (Exp*)$3);
-    $$ = emitRelop((Exp*)$1, (Value*)$2, (Exp*)$3);
+    $$ = emit_relop((Exp*)$1, (Value*)$2, (Exp*)$3);
     delete($1); delete($2); delete($3);
  };
 
@@ -519,7 +519,7 @@ Exp : LPAREN Type RPAREN Exp{
       errorMismatch(yylineno);
       exit(1);
   }
-  $$ = llvmCasting((Exp*)$4, to_type);
+  $$ = llvm_casting((Exp*)$4, to_type);
 };
 
 
@@ -554,7 +554,7 @@ $$ = new N(buffer.makelist(bpItem(branch, FIRST)));
 int main (){
     yyparse();
 
-    initBuffer();
+    init_buffer();
     if (!st.was_main_declared)
     {
         errorMainMissing();
