@@ -156,7 +156,6 @@ Formals : {$$ = NULL;}
 FormalsList : FormalDecl { $$ = $1;};
            |FormalDecl COMMA FormalsList {$$ = $1; $$->next = $3;};
 
-// TODO: check what to do with const
 FormalDecl : TypeAnnotation Type ID {
    string name = ((Value*)$3)->get_str();
    string type = ((Value*)$2)->get_str();
@@ -195,7 +194,6 @@ Statement : TypeAnnotation Type ID SC {
     $$ = new Statement();
  };
 
-// todo: add const literal shit
 Statement : TypeAnnotation Type ID ASSIGN Exp SC {
    string name = ((Value*)$3)->get_str();
    string type = ((Value*)$2)->get_str();
