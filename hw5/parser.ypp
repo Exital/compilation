@@ -460,14 +460,12 @@ Exp : STRING {
 Exp : TRUE {
   int branch = buffer.emit("br label @");
   $$ = new Exp("BOOL", "1", buffer.makelist(bpItem(branch, FIRST)));
-  ((Exp*)$$)->literal_value = "1";
 };
 Exp : FALSE {
   int branch = buffer.emit("br label @");
   Exp* new_exp = new Exp("BOOL", "0");
   new_exp->false_list = buffer.makelist(bpItem(branch, FIRST));
   $$ = new_exp;
-  ((Exp*)$$)->literal_value = "0";
 };
 
 Exp : NOT Exp {
