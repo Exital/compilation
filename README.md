@@ -1,8 +1,8 @@
 # 236360 - Theory Of Compilation HW
 
-Grades:
-[x] HW1 - 100
-[x] HW2 - 100
-[x] HW3 - 100
-[x] HW4 - 100
-[x] HW5 - 100
+## Grades:
+* HW1 - 100
+* HW2 - 100
+* HW3 - 100
+* HW4 - 100
+* HW5 - 100
